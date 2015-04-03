@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.util.Reflections;
 
 import java.lang.reflect.Type;
@@ -41,7 +42,7 @@ public class PendingResponse<T> {
     public void complete(final JsonRpcResponse<T> response) {
         if (response.getError().isPresent()) {
             final ErrorMessage error = response.getError().get();
-            future.setException(new RuntimeException(error.getMessage())); // TODO
+            future.setException(CodedException.fromErrorMessage(error));
         } else if (response.getResult().isPresent()) {
             final T result = response.getResult().get();
             future.set(result);
