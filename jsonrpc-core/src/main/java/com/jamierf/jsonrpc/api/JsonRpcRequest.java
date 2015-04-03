@@ -3,10 +3,15 @@ package com.jamierf.jsonrpc.api;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
 public class JsonRpcRequest extends JsonRpcMessage {
+
+    public static JsonRpcRequest method(final String method) {
+        return method(method, Collections.emptyMap());
+    }
 
     public static JsonRpcRequest method(final String method, final Map<String, ?> params) {
         return new JsonRpcRequest("2.0", method, params, UUID.randomUUID().toString());

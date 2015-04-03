@@ -45,7 +45,7 @@ public class JsonRpcServer {
 
         codec = Jackson.newObjectMapper();
         codec.disable(SerializationFeature.CLOSE_CLOSEABLE);
-        codec.registerModule(new JsonRpcModule(
+        codec.registerModule(new JsonRpcModule(true, // TODO: configuration
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
                 Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes))
         ));

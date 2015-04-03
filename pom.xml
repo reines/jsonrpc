@@ -20,6 +20,7 @@
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
+        <hamcrest-json.version>0.2</hamcrest-json.version>
         <mockito.version>1.10.19</mockito.version>
     </properties>
 
@@ -34,6 +35,12 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.co.datumedge</groupId>
+            <artifactId>hamcrest-json</artifactId>
+            <version>${hamcrest-json.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
