@@ -1,6 +1,7 @@
 package com.jamierf.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -43,6 +44,7 @@ public class JsonRpcServer {
         methods = Maps.newHashMap();
 
         codec = Jackson.newObjectMapper();
+        codec.disable(SerializationFeature.CLOSE_CLOSEABLE);
         codec.registerModule(new JsonRpcModule(
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
                 Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes))
