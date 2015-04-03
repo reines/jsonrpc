@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -21,13 +22,13 @@ public final class Reflections {
 
         final Parameter[] keys = method.getParameters();
         checkArgument(values.length == keys.length, "Invalid number of parameters");
-        final ImmutableMap.Builder<String, Object> result = ImmutableMap.builder();
+        final Map<String, Object> result = Maps.newHashMap(); // Need to accept nulls
 
         for (int index = 0; index < keys.length; index++) {
             result.put(keys[index].getName(), values[index]);
         }
 
-        return result.build();
+        return Collections.unmodifiableMap(result);
     }
 
     public static Map<String, Type> parameterTypeMap(final Method method) {

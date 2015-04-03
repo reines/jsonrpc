@@ -1,11 +1,14 @@
 package com.jamierf.jsonrpc;
 
 import com.google.common.base.Throwables;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
 import org.atmosphere.wasync.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 public class WebsocketJsonRpcServer extends JsonRpcServer {
 
@@ -22,7 +25,12 @@ public class WebsocketJsonRpcServer extends JsonRpcServer {
                     @Override
                     public void on(final String string) {
                         try {
-                            onMessage(string);
+                            onMessage(new ByteSource() {
+                                @Override
+                                public InputStream openStream() throws IOException {
+                                    return new ByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8));
+                                }
+                            });
                         } catch (IOException e) {
                             throw Throwables.propagate(e);
                         }
@@ -43,7 +51,18 @@ public class WebsocketJsonRpcServer extends JsonRpcServer {
     }
 
     @Override
-    protected void send(final String string) throws IOException {
-        socket.fire(string);
+    protected ByteSink getOutput() {
+        return new ByteSink() {
+            @Override
+            public OutputStream openStream() throws IOException {
+                return new ByteArrayOutputStream() {
+                    @Override
+                    public void close() throws IOException {
+                        socket.fire(new String(toByteArray(), StandardCharsets.UTF_8));
+                        super.close();
+                    }
+                };
+            }
+        };
     }
 }

@@ -1,26 +1,28 @@
 package com.jamierf.jsonrpc;
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
+import com.fasterxml.jackson.databind.util.ByteBufferBackedOutputStream;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
 import com.google.common.net.HostAndPort;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 public class SocketJsonRpcServer extends JsonRpcServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketJsonRpcServer.class);
-    private static final int MAX_FRAME_SIZE = 1024 * 1024 * 10; // 10Mb
-    private static final String FRAME_TEMPLATE = "%s%n";
+    private static final int MAX_FRAME_SIZE = 1024 * 1024 * 1; // 1Mb
 
     private final Channel channel;
 
@@ -34,20 +36,18 @@ public class SocketJsonRpcServer extends JsonRpcServer {
                     @Override
                     protected void initChannel(final SocketChannel channel) {
                         channel.pipeline()
-                                .addLast(new StringEncoder(StandardCharsets.UTF_8) {
-                                    @Override
-                                    protected void encode(final ChannelHandlerContext ctx, final CharSequence msg,
-                                                          final List<Object> out) throws Exception {
-                                        super.encode(ctx, String.format(FRAME_TEMPLATE, msg), out);
-                                    }
-                                })
-                                .addLast(new LineBasedFrameDecoder(MAX_FRAME_SIZE))
-                                .addLast(new StringDecoder(StandardCharsets.UTF_8))
+                                .addLast(new JsonBasedFrameDecoder(MAX_FRAME_SIZE))
                                 .addLast(new ChannelInboundHandlerAdapter() {
                                     @Override
                                     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
                                             throws IOException {
-                                        onMessage((String) msg);
+                                        final ByteBuffer buffer = ((ByteBuf) msg).nioBuffer();
+                                        onMessage(new ByteSource() {
+                                            @Override
+                                            public InputStream openStream() throws IOException {
+                                                return new ByteBufferBackedInputStream(buffer);
+                                            }
+                                        });
                                     }
 
                                     @Override
@@ -65,7 +65,19 @@ public class SocketJsonRpcServer extends JsonRpcServer {
     }
 
     @Override
-    protected void send(final String string) throws IOException {
-        channel.writeAndFlush(string);
+    protected ByteSink getOutput() {
+        return new ByteSink() {
+            @Override
+            public OutputStream openStream() throws IOException {
+                final ByteBuffer buffer = ByteBuffer.allocate(MAX_FRAME_SIZE);
+                return new ByteBufferBackedOutputStream(buffer) {
+                    @Override
+                    public void close() throws IOException {
+                        channel.writeAndFlush(buffer);
+                        super.close();
+                    }
+                };
+            }
+        };
     }
 }

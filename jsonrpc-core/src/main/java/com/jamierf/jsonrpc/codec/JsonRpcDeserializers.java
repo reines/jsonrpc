@@ -107,18 +107,19 @@ public class JsonRpcDeserializers extends Deserializers.Base {
     private JsonRpcResponse<?> deserializeResponse(final JsonNode node, final ObjectCodec codec) throws IOException {
         // Extract the ID then figure out the type based on the expected return type of the request
         final Optional<String> id = Optional.fromNullable(Nodes.getText(node, "id"));
-        checkArgument(id.isPresent(), "Invalid response without id");
-
-        final TypeReference<?> type = responseTypeMapper.apply(id.get());
 
         final Optional<JsonNode> result = Optional.fromNullable(Nodes.get(node, "result"));
         final Optional<JsonNode> error = Optional.fromNullable(Nodes.get(node, "error"));
+        checkArgument(result.isPresent() ^ error.isPresent(), "Only one of result and error may be present");
+
+        checkArgument(id.isPresent() || !result.isPresent(), "Invalid result response without id");
+        final TypeReference<?> type = id.isPresent() ? responseTypeMapper.apply(id.get()) : new TypeReference<Object>() {};
 
         return new JsonRpcResponse<>(
                 Nodes.getText(node, "jsonrpc"),
                 result.transform(deserialize(codec, type)),
                 error.transform(deserialize(codec, ErrorMessage.class)),
-                id.get()
+                id.orNull()
         );
     }
 }

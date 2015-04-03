@@ -6,25 +6,26 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
 import com.google.common.reflect.Reflection;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.codec.JsonRpcModule;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.Reflections;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Map;
 
 public abstract class JsonRpcServer {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
 
     private final ObjectMapper codec;
     private final Map<String, PendingResponse<?>> requests;
@@ -69,21 +70,24 @@ public abstract class JsonRpcServer {
     }
 
     protected void send(final JsonRpcMessage message) {
-        try {
-            final String string = codec.writeValueAsString(message);
-            LOGGER.trace("-> {}", string);
-            send(string);
+        try (final OutputStream out = getOutput().openStream()) {
+            codec.writeValue(out, message);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
     }
 
-    protected abstract void send(final String string) throws IOException;
+    protected abstract ByteSink getOutput();
 
     @SuppressWarnings("unchecked")
     private <T> void onResponse(final JsonRpcResponse<T> response) {
         final PendingResponse<T> pending = (PendingResponse<T>) requests.get(response.getId());
         if (pending == null) {
+            final Optional<ErrorMessage> error = response.getError();
+            if (error.isPresent()) {
+                throw new RuntimeException(error.get().getMessage()); // TODO
+            }
+
             throw new IllegalStateException("Received response to unknown request: " + response.getId());
         }
 
@@ -108,9 +112,14 @@ public abstract class JsonRpcServer {
         }
     }
 
-    protected void onMessage(final String string) throws IOException {
-        LOGGER.trace("<- {}", string);
-        final JsonRpcMessage message = codec.readValue(string, JsonRpcMessage.class);
+    private JsonRpcMessage readMessage(final ByteSource input) throws IOException {
+        try (final InputStream in = input.openStream()) {
+            return codec.readValue(in, JsonRpcMessage.class);
+        }
+    }
+
+    protected void onMessage(final ByteSource input) throws IOException {
+        final JsonRpcMessage message = readMessage(input);
         if (message instanceof JsonRpcResponse<?>) {
             onResponse((JsonRpcResponse<?>) message);
         } else if (message instanceof JsonRpcRequest) {
