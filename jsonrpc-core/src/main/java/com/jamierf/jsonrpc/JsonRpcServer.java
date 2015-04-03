@@ -14,6 +14,7 @@ import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.codec.JsonRpcModule;
+import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.Reflections;
@@ -23,9 +24,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class JsonRpcServer {
+
+    private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
 
     private final Transport transport;
     private final ObjectMapper codec;
@@ -35,7 +39,7 @@ public class JsonRpcServer {
     public JsonRpcServer(final Transport transport) {
         this.transport = transport;
 
-        requests = Maps.newHashMap();
+        requests = Maps.newHashMap(); // TODO: expire requests after a reasonable (configurable?) duration
         methods = Maps.newHashMap();
 
         codec = Jackson.newObjectMapper();
@@ -77,6 +81,7 @@ public class JsonRpcServer {
     protected void send(final JsonRpcMessage message) {
         try (final OutputStream out = transport.getMessageOutput().openStream()) {
             codec.writeValue(out, message);
+            out.write(DELIMITER);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
@@ -88,7 +93,7 @@ public class JsonRpcServer {
         if (pending == null) {
             final Optional<ErrorMessage> error = response.getError();
             if (error.isPresent()) {
-                throw new RuntimeException(error.get().getMessage()); // TODO
+                throw CodedException.fromErrorMessage(error.get());
             }
 
             throw new IllegalStateException("Received response to unknown request: " + response.getId());
