@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedOutputStream;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.net.HostAndPort;
+import com.jamierf.jsonrpc.transport.AbstractTransport;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -19,14 +20,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
-public class SocketJsonRpcServer extends JsonRpcServer {
+public class SocketTransport extends AbstractTransport {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SocketJsonRpcServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
     private static final int MAX_FRAME_SIZE = 1024 * 1024 * 1; // 1Mb
 
     private final Channel channel;
 
-    public SocketJsonRpcServer(final HostAndPort address) {
+    public SocketTransport(final HostAndPort address) {
         channel = new Bootstrap()
                 .group(new NioEventLoopGroup())
                 .channel(NioSocketChannel.class)
@@ -42,7 +43,7 @@ public class SocketJsonRpcServer extends JsonRpcServer {
                                     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
                                             throws IOException {
                                         final ByteBuffer buffer = ((ByteBuf) msg).nioBuffer();
-                                        onMessage(new ByteSource() {
+                                        putMessageInput(new ByteSource() {
                                             @Override
                                             public InputStream openStream() throws IOException {
                                                 return new ByteBufferBackedInputStream(buffer);
@@ -65,7 +66,7 @@ public class SocketJsonRpcServer extends JsonRpcServer {
     }
 
     @Override
-    protected ByteSink getOutput() {
+    public ByteSink getMessageOutput() {
         return new ByteSink() {
             @Override
             public OutputStream openStream() throws IOException {

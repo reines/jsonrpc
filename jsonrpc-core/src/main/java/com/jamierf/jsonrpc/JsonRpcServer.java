@@ -6,7 +6,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
-import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.reflect.Reflection;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -15,6 +14,7 @@ import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.codec.JsonRpcModule;
+import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.Reflections;
 
@@ -25,13 +25,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-public abstract class JsonRpcServer {
+public class JsonRpcServer {
 
+    private final Transport transport;
     private final ObjectMapper codec;
     private final Map<String, PendingResponse<?>> requests;
     private final Map<String, RequestMethod> methods;
 
-    public JsonRpcServer() {
+    public JsonRpcServer(final Transport transport) {
+        this.transport = transport;
+
         requests = Maps.newHashMap();
         methods = Maps.newHashMap();
 
@@ -40,6 +43,8 @@ public abstract class JsonRpcServer {
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
                 Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes))
         ));
+
+        transport.addListener(this::onMessage);
     }
 
     @SuppressWarnings("unchecked")
@@ -70,14 +75,12 @@ public abstract class JsonRpcServer {
     }
 
     protected void send(final JsonRpcMessage message) {
-        try (final OutputStream out = getOutput().openStream()) {
+        try (final OutputStream out = transport.getMessageOutput().openStream()) {
             codec.writeValue(out, message);
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
     }
-
-    protected abstract ByteSink getOutput();
 
     @SuppressWarnings("unchecked")
     private <T> void onResponse(final JsonRpcResponse<T> response) {

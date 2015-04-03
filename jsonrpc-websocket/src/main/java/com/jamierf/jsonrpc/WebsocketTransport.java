@@ -3,6 +3,7 @@ package com.jamierf.jsonrpc;
 import com.google.common.base.Throwables;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
+import com.jamierf.jsonrpc.transport.AbstractTransport;
 import org.atmosphere.wasync.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,13 +11,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-public class WebsocketJsonRpcServer extends JsonRpcServer {
+public class WebsocketTransport extends AbstractTransport {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketJsonRpcServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebsocketTransport.class);
 
     private final Socket socket;
 
-    public WebsocketJsonRpcServer(final String uri) throws IOException {
+    public WebsocketTransport(final String uri) throws IOException {
         LOGGER.info("Connecting to: {}", uri);
         final Client client = ClientFactory.getDefault().newClient();
 
@@ -25,7 +26,7 @@ public class WebsocketJsonRpcServer extends JsonRpcServer {
                     @Override
                     public void on(final String string) {
                         try {
-                            onMessage(new ByteSource() {
+                            putMessageInput(new ByteSource() {
                                 @Override
                                 public InputStream openStream() throws IOException {
                                     return new ByteArrayInputStream(string.getBytes(StandardCharsets.UTF_8));
@@ -51,7 +52,7 @@ public class WebsocketJsonRpcServer extends JsonRpcServer {
     }
 
     @Override
-    protected ByteSink getOutput() {
+    public ByteSink getMessageOutput() {
         return new ByteSink() {
             @Override
             public OutputStream openStream() throws IOException {
