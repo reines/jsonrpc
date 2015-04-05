@@ -1,26 +1,25 @@
 package com.jamierf.jsonrpc.codec;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Functions;
 import com.google.common.collect.Maps;
 import com.jamierf.jsonrpc.PendingResponse;
 import com.jamierf.jsonrpc.RequestMethod;
 import com.jamierf.jsonrpc.api.JsonRpcMessage;
+import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.util.Jackson;
-import com.jamierf.jsonrpc.util.Reflections;
 import org.junit.rules.ExternalResource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.Map;
 
 import static com.jamierf.jsonrpc.util.Reflections.parameterizedType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SerializationTest extends ExternalResource {
+public class SerializationTestRule extends ExternalResource {
 
     private final boolean useNamedParams;
     private ObjectMapper mapper;
@@ -28,7 +27,7 @@ public class SerializationTest extends ExternalResource {
     private Map<String, PendingResponse<?>> requests;
     private Map<String, RequestMethod> methods;
 
-    public SerializationTest(final boolean useNamedParams) {
+    public SerializationTestRule(final boolean useNamedParams) {
         this.useNamedParams = useNamedParams;
     }
 
@@ -45,12 +44,12 @@ public class SerializationTest extends ExternalResource {
     }
 
     public RequestMethod mockMethod(final String name) {
-        return mockMethod(name, Collections.emptyMap());
+        return mockMethod(name, Parameters.none());
     }
 
-    public RequestMethod mockMethod(final String name, final Map<String, Type> types) {
+    public RequestMethod mockMethod(final String name, final Parameters<String, TypeReference<?>> types) {
         final RequestMethod requestMethod = mock(RequestMethod.class);
-        when(requestMethod.getParameterTypes()).thenReturn(Maps.transformValues(types, Reflections::reference));
+        when(requestMethod.getParameterTypes()).thenReturn(types);
 
         methods.put(name, requestMethod);
         return requestMethod;

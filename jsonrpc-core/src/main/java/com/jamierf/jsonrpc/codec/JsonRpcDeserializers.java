@@ -9,15 +9,10 @@ import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
-import com.jamierf.jsonrpc.api.ErrorMessage;
-import com.jamierf.jsonrpc.api.JsonRpcMessage;
-import com.jamierf.jsonrpc.api.JsonRpcRequest;
-import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.api.*;
 import com.jamierf.jsonrpc.util.Nodes;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -33,6 +28,9 @@ public class JsonRpcDeserializers extends Deserializers.Base {
         public JsonRpcMessage deserialize(final JsonParser jp, final DeserializationContext ctxt) throws IOException {
             final ObjectCodec codec = checkNotNull(jp.getCodec());
             final JsonNode node = codec.readTree(jp);
+
+            final String protocol = Nodes.getText(node, "jsonrpc");
+            checkArgument(JsonRpcModule.PROTOCOL_VERSION.equals(protocol), "Unsupported protocol: " + protocol);
 
             // This must be a request
             if (node.has("method")) {
@@ -50,10 +48,10 @@ public class JsonRpcDeserializers extends Deserializers.Base {
     }
 
     private final Function<String, TypeReference<?>> responseTypeMapper;
-    private final Function<String, Map<String, TypeReference<?>>> requestParamTypeMapper;
+    private final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper;
 
     public JsonRpcDeserializers(final Function<String, TypeReference<?>> responseTypeMapper,
-                                final Function<String, Map<String, TypeReference<?>>> requestParamTypeMapper) {
+                                final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper) {
         this.responseTypeMapper = responseTypeMapper;
         this.requestParamTypeMapper = requestParamTypeMapper;
     }
@@ -72,21 +70,30 @@ public class JsonRpcDeserializers extends Deserializers.Base {
         // Extract the ID then figure out the parameter types based on the known method parameters
         final Optional<String> method = Optional.fromNullable(Nodes.getText(node, "method"));
         checkArgument(method.isPresent(), "Invalid request without method");
-        final Map<String, TypeReference<?>> types = requestParamTypeMapper.apply(method.get());
+        final Parameters<String, TypeReference<?>> types = requestParamTypeMapper.apply(method.get());
 
         final Optional<String> id = Optional.fromNullable(Nodes.getText(node, "id"));
         final Optional<JsonNode> params = Optional.fromNullable(Nodes.get(node, "params"));
 
         return new JsonRpcRequest(
-                Nodes.getText(node, "jsonrpc"),
                 method.get(),
-                params.isPresent() ? deserializeParams(params.get(), types, codec) : Collections.emptyMap(),
+                params.isPresent() ? deserializeParams(params.get(), types, codec) : Parameters.none(),
                 id.orNull()
         );
     }
 
-    private Map<String, ?> deserializeParams(final JsonNode nodes, final Map<String, TypeReference<?>> types, final ObjectCodec codec) throws IOException {
-        final ImmutableMap.Builder<String, Object> params = ImmutableMap.builder();
+    private Parameters deserializeParams(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+                                         final ObjectCodec codec) throws IOException {
+        if (nodes.isArray()) {
+            return deserializePositionalParameters(nodes, types, codec);
+        }
+
+        return deserializeNamedParameters(nodes, types, codec);
+    }
+
+    private Parameters deserializeNamedParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+                                                  final ObjectCodec codec) throws IOException {
+        final Parameters.Builder<String, Object> parameters = Parameters.builder();
 
         final Iterator<Map.Entry<String, JsonNode>> nodeIterator = nodes.fields();
         while (nodeIterator.hasNext()) {
@@ -95,13 +102,34 @@ public class JsonRpcDeserializers extends Deserializers.Base {
             final String name = entry.getKey();
             final JsonParser jp = codec.treeAsTokens(entry.getValue());
 
-            final TypeReference<?> type = types.get(name);
-            checkArgument(type != null, "Unknown parameter: " + name);
+            final Optional<TypeReference<?>> type = types.get(name);
+            checkArgument(type.isPresent(), "Unknown parameter: " + name);
 
-            params.put(name, codec.readValue(jp, type));
+            parameters.add(name, codec.readValue(jp, type.get()));
         }
 
-        return params.build();
+        return parameters.build();
+    }
+
+    private Parameters deserializePositionalParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+                                                       final ObjectCodec codec) throws IOException {
+        final Parameters.Builder<String, Object> parameters = Parameters.builder();
+
+        final Iterator<JsonNode> nodeIterator = nodes.elements();
+        final Iterator<Map.Entry<String,TypeReference<?>>> typeIterator = types.iterator();
+        while (nodeIterator.hasNext() && typeIterator.hasNext()) {
+            final Map.Entry<String, TypeReference<?>> entry = typeIterator.next();
+
+            final String name = entry.getKey();
+            final JsonParser jp = codec.treeAsTokens(nodeIterator.next());
+
+            final TypeReference<?> type = entry.getValue();
+
+            parameters.add(name, codec.readValue(jp, type));
+        }
+
+        checkArgument(!(nodeIterator.hasNext() || typeIterator.hasNext()), "Mismatched number of parameters");
+        return parameters.build();
     }
 
     private JsonRpcResponse<?> deserializeResponse(final JsonNode node, final ObjectCodec codec) throws IOException {
@@ -116,7 +144,6 @@ public class JsonRpcDeserializers extends Deserializers.Base {
         final TypeReference<?> type = id.isPresent() ? responseTypeMapper.apply(id.get()) : new TypeReference<Object>() {};
 
         return new JsonRpcResponse<>(
-                Nodes.getText(node, "jsonrpc"),
                 result.transform(deserialize(codec, type)),
                 error.transform(deserialize(codec, ErrorMessage.class)),
                 id.orNull()

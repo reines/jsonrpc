@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "ping",
+  "params": [
+    "timmy",
+    3,
+    1427900421000,
+    {
+      "string": "hello world",
+      "int": 7
+    }
+  ]
+}

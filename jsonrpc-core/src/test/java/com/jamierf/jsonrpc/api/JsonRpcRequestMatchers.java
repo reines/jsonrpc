@@ -3,8 +3,6 @@ package com.jamierf.jsonrpc.api;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 
-import java.util.Map;
-
 import static org.hamcrest.core.IsEqual.equalTo;
 
 public final class JsonRpcRequestMatchers {
@@ -17,10 +15,10 @@ public final class JsonRpcRequestMatchers {
         };
     }
 
-    public static Matcher<JsonRpcRequest> withParams(final Map<String, ?> params) {
-        return new FeatureMatcher<JsonRpcRequest, Map<String, ?>>(equalTo(params), "method params", "method params") {
+    public static Matcher<JsonRpcRequest> withParams(final Parameters<String, ?> params) {
+        return new FeatureMatcher<JsonRpcRequest, Parameters<String, ?>>(equalTo(params), "method params", "method params") {
             @Override
-            protected Map<String, ?> featureValueOf(final JsonRpcRequest actual) {
+            protected Parameters<String, ?> featureValueOf(final JsonRpcRequest actual) {
                 return actual.getParams();
             }
         };

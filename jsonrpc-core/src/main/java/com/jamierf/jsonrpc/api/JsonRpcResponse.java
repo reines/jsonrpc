@@ -8,8 +8,8 @@ public class JsonRpcResponse<T> extends JsonRpcMessage {
     private final Optional<T> result;
     private final Optional<ErrorMessage> error;
 
-    public JsonRpcResponse(final String protocol, final Optional<T> result, final Optional<ErrorMessage> error, final String id) {
-        super(protocol, id);
+    public JsonRpcResponse(final Optional<T> result, final Optional<ErrorMessage> error, final String id) {
+        super(id);
 
         this.result = result;
         this.error = error;

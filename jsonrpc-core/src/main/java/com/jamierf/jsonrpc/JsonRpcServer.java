@@ -10,15 +10,11 @@ import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.reflect.Reflection;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.jamierf.jsonrpc.api.ErrorMessage;
-import com.jamierf.jsonrpc.api.JsonRpcMessage;
-import com.jamierf.jsonrpc.api.JsonRpcRequest;
-import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.api.*;
 import com.jamierf.jsonrpc.codec.JsonRpcModule;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.Jackson;
-import com.jamierf.jsonrpc.util.Reflections;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,12 +53,12 @@ public class JsonRpcServer {
     public <T> T proxy(final String namespace, final Class<T> remoteInterface) {
         return Reflection.newProxy(remoteInterface, (proxy, method, args) -> call(
                 name(namespace, method.getName()),
-                Reflections.parameterMap(method, args),
+                Parameters.zip(method.getParameters(), args),
                 method.getGenericReturnType()
         ).get());
     }
 
-    protected <T> ListenableFuture<T> call(final String method, final Map<String, ?> params, final Type returnType) {
+    protected <T> ListenableFuture<T> call(final String method, final Parameters<String, ?> params, final Type returnType) {
         final JsonRpcRequest request = JsonRpcRequest.method(method, params);
 
         final PendingResponse<T> pending = new PendingResponse<>(returnType);

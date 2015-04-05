@@ -3,25 +3,23 @@ package com.jamierf.jsonrpc.api;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Optional;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.UUID;
 
 public class JsonRpcRequest extends JsonRpcMessage {
 
     public static JsonRpcRequest method(final String method) {
-        return method(method, Collections.emptyMap());
+        return method(method, Parameters.none());
     }
 
-    public static JsonRpcRequest method(final String method, final Map<String, ?> params) {
-        return new JsonRpcRequest("2.0", method, params, UUID.randomUUID().toString());
+    public static JsonRpcRequest method(final String method, final Parameters<String, ?> params) {
+        return new JsonRpcRequest(method, params, UUID.randomUUID().toString());
     }
 
     private final String method;
-    private final Map<String, ?> params;
+    private final Parameters<String, ?> params;
 
-    public JsonRpcRequest(final String protocol, final String method, final Map<String, ?> params, final String id) {
-        super(protocol, id);
+    public JsonRpcRequest(final String method, final Parameters<String, ?> params, final String id) {
+        super(id);
 
         this.method = method;
         this.params = params;
@@ -31,17 +29,17 @@ public class JsonRpcRequest extends JsonRpcMessage {
         return method;
     }
 
-    public Map<String, ?> getParams() {
+    public Parameters<String, ?> getParams() {
         return params;
     }
 
     public <T> JsonRpcResponse<T> response(final T result) {
-        return new JsonRpcResponse<>(getProtocol(), Optional.of(result), Optional.absent(), getId());
+        return new JsonRpcResponse<>(Optional.of(result), Optional.absent(), getId());
     }
 
     public JsonRpcResponse<?> error(final int code, final String message) {
         final ErrorMessage errorMessage = new ErrorMessage(code, message);
-        return new JsonRpcResponse<>(getProtocol(), Optional.absent(), Optional.of(errorMessage), getId());
+        return new JsonRpcResponse<>(Optional.absent(), Optional.of(errorMessage), getId());
     }
 
     @Override

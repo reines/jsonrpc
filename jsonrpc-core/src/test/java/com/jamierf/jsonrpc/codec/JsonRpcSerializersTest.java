@@ -1,8 +1,8 @@
 package com.jamierf.jsonrpc.codec;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
+import com.jamierf.jsonrpc.api.Parameters;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -15,24 +15,40 @@ import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 public class JsonRpcSerializersTest {
 
+    private static final String MESSAGE_ID = "1";
+
     @Rule
-    public SerializationTest serialization = new SerializationTest(true);
+    public SerializationTestRule namedSerialization = new SerializationTestRule(true);
+
+    @Rule
+    public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
 
     @Test
     public void testRequestWithoutParametersSerialized() throws IOException {
-        final JsonRpcRequest request = JsonRpcRequest.method("ping");
-        assertThat(serialization.serialize(request), sameJSONAs(resource("no_params_request.json")));
+        final JsonRpcRequest request = new JsonRpcRequest("ping", Parameters.none(), MESSAGE_ID);
+        assertThat(namedSerialization.serialize(request), sameJSONAs(resource("no_params_request.json")));
     }
 
     @Test
     public void testRequestWithParametersSerialized() throws IOException {
-        final JsonRpcRequest request = JsonRpcRequest.method("ping", ImmutableMap.of(
+        final JsonRpcRequest request = new JsonRpcRequest("ping", Parameters.of(
                 "name", "timmy",
                 "age", 3,
                 "dob", new Date(1427900421000L),
                 "test", new TestEntity("hello world", 7)
-        ));
-        assertThat(serialization.serialize(request), sameJSONAs(resource("params_request.json")));
+        ), MESSAGE_ID);
+        assertThat(namedSerialization.serialize(request), sameJSONAs(resource("params_request.json")));
+    }
+
+    @Test
+    public void testRequestWithPositionalParametersSerialized() throws IOException {
+        final JsonRpcRequest request = new JsonRpcRequest("ping", Parameters.of(
+                "name", "timmy",
+                "age", 3,
+                "dob", new Date(1427900421000L),
+                "test", new TestEntity("hello world", 7)
+        ), MESSAGE_ID);
+        assertThat(positionalSerialization.serialize(request), sameJSONAs(resource("positional_params_request.json")));
     }
 
     private static String resource(final String resource) throws IOException {
