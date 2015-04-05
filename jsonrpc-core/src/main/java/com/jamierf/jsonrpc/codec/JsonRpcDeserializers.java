@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 import com.jamierf.jsonrpc.api.*;
 import com.jamierf.jsonrpc.util.Nodes;
 
@@ -93,8 +94,9 @@ public class JsonRpcDeserializers extends Deserializers.Base {
 
     private Parameters deserializeNamedParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
                                                   final ObjectCodec codec) throws IOException {
-        final Parameters.Builder<String, Object> parameters = Parameters.builder();
+        final Map<String, Object> decodedParameters = Maps.newHashMap();
 
+        // Decode to a temporary map in whatever order we received them
         final Iterator<Map.Entry<String, JsonNode>> nodeIterator = nodes.fields();
         while (nodeIterator.hasNext()) {
             final Map.Entry<String, JsonNode> entry = nodeIterator.next();
@@ -105,7 +107,14 @@ public class JsonRpcDeserializers extends Deserializers.Base {
             final Optional<TypeReference<?>> type = types.get(name);
             checkArgument(type.isPresent(), "Unknown parameter: " + name);
 
-            parameters.add(name, codec.readValue(jp, type.get()));
+            decodedParameters.put(name, codec.readValue(jp, type.get()));
+        }
+
+        // Create a parameter map in the correct order for the target method
+        final Parameters.Builder<String, Object> parameters = Parameters.builder();
+
+        for (final String name : types.keys()) {
+            parameters.add(name, decodedParameters.get(name));
         }
 
         return parameters.build();

@@ -8,9 +8,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 
 import java.lang.reflect.Parameter;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.jamierf.jsonrpc.util.Reflections.reference;
@@ -105,6 +103,10 @@ public class Parameters<K, V> {
 
     public Map<K, V> named() {
         return Maps.transformValues(params, Optional::orNull);
+    }
+
+    public Set<K> keys() {
+        return Collections.unmodifiableSet(params.keySet());
     }
 
     @SuppressWarnings("unchecked")
