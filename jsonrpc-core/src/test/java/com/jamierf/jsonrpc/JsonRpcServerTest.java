@@ -35,7 +35,7 @@ public class JsonRpcServerTest {
         when(transport.getMessageOutput()).thenReturn(response);
 
         server = JsonRpcServer.withTransport(transport)
-                .setExecutor(MoreExecutors.newDirectExecutorService())
+                .executor(MoreExecutors.newDirectExecutorService())
                 .build();
 
         server.register(new Interface() {

@@ -26,22 +26,22 @@ public class JsonRpcServerBuilder {
         this.transport = checkNotNull(transport);
     }
 
-    public JsonRpcServerBuilder setUseNamedParameters(final boolean useNamedParameters) {
+    public JsonRpcServerBuilder useNamedParameters(final boolean useNamedParameters) {
         this.useNamedParameters = useNamedParameters;
         return this;
     }
 
-    public JsonRpcServerBuilder setRequestTimeout(final long requestTimeout) {
+    public JsonRpcServerBuilder requestTimeout(final long requestTimeout) {
         this.requestTimeout = requestTimeout;
         return this;
     }
 
-    public JsonRpcServerBuilder setExecutor(final ExecutorService executor) {
+    public JsonRpcServerBuilder executor(final ExecutorService executor) {
         this.executor = Optional.of(executor);
         return this;
     }
 
-    public JsonRpcServerBuilder setMetrics(final MetricRegistry metrics) {
+    public JsonRpcServerBuilder metrics(final MetricRegistry metrics) {
         this.metrics = Optional.of(metrics);
         return this;
     }
