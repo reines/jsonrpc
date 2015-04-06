@@ -9,10 +9,10 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>jsonrpc-websocket</artifactId>
+    <artifactId>transport-socket</artifactId>
 
     <properties>
-        <atmosphere.version>2.0.0</atmosphere.version>
+        <netty.version>4.0.26.Final</netty.version>
     </properties>
 
     <dependencies>
@@ -22,9 +22,9 @@
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.atmosphere</groupId>
-            <artifactId>wasync</artifactId>
-            <version>${atmosphere.version}</version>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>${netty.version}</version>
         </dependency>
     </dependencies>
 </project>

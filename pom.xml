@@ -10,8 +10,8 @@
 
     <modules>
         <module>jsonrpc-core</module>
-        <module>jsonrpc-websocket</module>
-        <module>jsonrpc-socket</module>
+        <module>transport-socket</module>
+        <module>transport-websocket</module>
     </modules>
 
     <properties>
