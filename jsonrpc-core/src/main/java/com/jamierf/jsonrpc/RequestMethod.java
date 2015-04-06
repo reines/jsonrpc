@@ -8,6 +8,8 @@ import com.jamierf.jsonrpc.api.Parameters;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static com.jamierf.jsonrpc.util.Reflections.isVoid;
+
 public class RequestMethod {
 
     private final Method method;
@@ -28,8 +30,8 @@ public class RequestMethod {
     public Optional<?> invoke(final Parameters params) {
         try {
             final Object result = method.invoke(instance, params.positional());
-            if (!Void.class.isAssignableFrom(method.getReturnType())) {
-                return Optional.of(result);
+            if (!isVoid(method.getReturnType())) {
+                return Optional.of(result); // TODO: may return null
             }
 
             return Optional.absent();

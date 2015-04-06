@@ -61,7 +61,7 @@ public class SerializationTestRule extends ExternalResource {
         return pendingResponse;
     }
 
-    public String serialize(final Object value) throws IOException {
+    public String serialize(final JsonRpcMessage value) throws IOException {
         return mapper.writeValueAsString(value);
     }
 

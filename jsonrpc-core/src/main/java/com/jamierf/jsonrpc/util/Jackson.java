@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.util;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -18,6 +19,7 @@ public final class Jackson {
         return new ObjectMapper()
                 .registerModule(new GuavaModule())
                 .registerModule(new AfterburnerModule())
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                 .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS);
     }

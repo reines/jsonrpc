@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SocketTransport extends AbstractTransport {
 
@@ -75,14 +76,17 @@ public class SocketTransport extends AbstractTransport {
         return new ByteSink() {
             @Override
             public OutputStream openStream() throws IOException {
+                final AtomicBoolean closed = new AtomicBoolean(false);
                 return new ByteArrayOutputStream(MAX_FRAME_SIZE) {
                     @Override
                     public void close() throws IOException {
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("-> {}", new String(buf, 0, count, StandardCharsets.UTF_8));
+                        if (closed.compareAndSet(false, true)) {
+                            if (LOGGER.isTraceEnabled()) {
+                                LOGGER.trace("-> {}", new String(buf, 0, count, StandardCharsets.UTF_8));
+                            }
+                            channel.writeAndFlush(Unpooled.wrappedBuffer(buf, 0, count));
+                            super.close();
                         }
-                        channel.writeAndFlush(Unpooled.wrappedBuffer(buf, 0, count));
-                        super.close();
                     }
                 };
             }

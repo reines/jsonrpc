@@ -3,12 +3,14 @@ package com.jamierf.jsonrpc;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.reflect.Reflection;
@@ -19,6 +21,8 @@ import com.jamierf.jsonrpc.codec.JsonRpcModule;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.Jackson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +30,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -38,6 +43,7 @@ public class JsonRpcServer {
 
     private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
     private static final String DEFAULT_METRIC_REGISTRY_NAME = "jsonrpc";
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
 
     private final Transport transport;
     private final MetricRegistry metrics;
@@ -106,13 +112,17 @@ public class JsonRpcServer {
         return pending.getFuture();
     }
 
+    public <T> void register(final T instance, final Class<T> type) {
+        register(null, instance, type);
+    }
+
     public <T> void register(final String namespace, final T instance, final Class<T> type) {
         for (final Method method : type.getMethods()) {
             methods.put(zipNamespace(namespace, method.getName()), new RequestMethod(method, instance));
         }
     }
 
-    protected void send(final JsonRpcMessage message) {
+    private void send(final Object message) {
         final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "send-message")).time();
         try (final OutputStream out = transport.getMessageOutput().openStream()) {
             codec.writeValue(out, message);
@@ -125,7 +135,7 @@ public class JsonRpcServer {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void onResponse(final JsonRpcResponse<T> response) {
+    private <T> void handleResponse(final JsonRpcResponse<T> response) {
         final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "process-response")).time();
         try {
             final PendingResponse<T> pending = (PendingResponse<T>) requests.get(response.getId());
@@ -144,7 +154,7 @@ public class JsonRpcServer {
         }
     }
 
-    private void onRequest(final JsonRpcRequest request) {
+    private Optional<JsonRpcResponse<?>> handleRequest(final JsonRpcRequest request) {
         final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "process-request")).time();
         try {
             final RequestMethod method = methods.get(request.getMethod());
@@ -153,37 +163,62 @@ public class JsonRpcServer {
             }
 
             final Optional<?> result = method.invoke(request.getParams());
-            if (result.isPresent()) {
-                final JsonRpcResponse<?> response = request.response(result.get());
-                send(response);
-            }
+            return result.transform(request::response);
         } catch (Exception e) {
-            final JsonRpcResponse<?> response = request.error(100, e.getMessage()); // TODO
-            send(response);
+            LOGGER.warn("Error handling request " + request.getId(), e);
+            return Optional.of(request.error(100, e.getMessage())); // TODO
         } finally {
             timer.stop();
         }
     }
 
-    private JsonRpcMessage readMessage(final ByteSource input) throws IOException {
+    private Optional<JsonRpcResponse<?>> handleMessage(final JsonRpcMessage message) {
+        if (message instanceof JsonRpcResponse<?>) {
+            handleResponse((JsonRpcResponse<?>) message);
+            return Optional.absent();
+        } else if (message instanceof JsonRpcRequest) {
+            return handleRequest((JsonRpcRequest) message);
+        }
+
+        throw new IllegalArgumentException("Received unknown message type: " + message);
+    }
+
+    private Collection<JsonRpcMessage> readMessage(final ByteSource input) throws IOException {
         final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "read-message")).time();
         try (final InputStream in = input.openStream()) {
-            return codec.readValue(in, JsonRpcMessage.class);
+            return codec.readValue(in, new TypeReference<Collection<JsonRpcMessage>>() {});
         } finally {
             timer.stop();
         }
     }
 
+    // TODO: Threading
     protected void onMessage(final ByteSource input) throws IOException {
-        final JsonRpcMessage message = readMessage(input);
-        if (message instanceof JsonRpcResponse<?>) {
-            onResponse((JsonRpcResponse<?>) message);
-        } else if (message instanceof JsonRpcRequest) {
-            onRequest((JsonRpcRequest) message);
+        final Collection<JsonRpcMessage> messages = readMessage(input);
+        final Collection<JsonRpcMessage> responses = Lists.newLinkedList();
+        final boolean batched = messages.size() > 1;
+
+        for (final JsonRpcMessage message : messages) {
+            final Optional<JsonRpcResponse<?>> response = handleMessage(message);
+            if (response.isPresent()) {
+                responses.add(response.get());
+            }
+        }
+
+        if (responses.isEmpty()) {
+            return;
+        }
+
+        if (batched) {
+           // There were more than 1 incoming, so it was a batch
+            send(responses);
+        } else {
+            // Not a batch, so send each response individually
+            responses.forEach(this::send);
         }
     }
 
-    private static String zipNamespace(final String base, final String... parts) {
-        return base + '.' + Joiner.on('.').join(parts);
+    private static String zipNamespace(final String... parts) {
+        return Joiner.on('.').skipNulls().join(parts);
     }
 }

@@ -10,6 +10,8 @@ import com.jamierf.jsonrpc.util.Reflections;
 
 import java.lang.reflect.Type;
 
+import static com.jamierf.jsonrpc.util.Reflections.isVoid;
+
 public class PendingResponse<T> {
 
     private final Type type;
@@ -26,7 +28,7 @@ public class PendingResponse<T> {
     }
 
     public boolean expectsResponse() {
-        return Void.class.isAssignableFrom(Reflections.classOf(type));
+        return !isVoid(Reflections.classOf(type));
     }
 
     public ListenableFuture<T> getFuture() {

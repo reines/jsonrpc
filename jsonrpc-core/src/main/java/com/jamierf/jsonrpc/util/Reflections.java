@@ -1,16 +1,9 @@
 package com.jamierf.jsonrpc.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.ImmutableMap;
-import com.jamierf.jsonrpc.api.Parameters;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Map;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 public final class Reflections {
 
@@ -53,6 +46,10 @@ public final class Reflections {
         }
 
         throw new IllegalArgumentException("Unknown type: " + type);
+    }
+
+    public static boolean isVoid(final Class<?> type) {
+        return Void.class.isAssignableFrom(type) || void.class.isAssignableFrom(type);
     }
 
     private Reflections() {
