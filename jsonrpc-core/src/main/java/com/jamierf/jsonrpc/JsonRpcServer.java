@@ -70,7 +70,8 @@ public class JsonRpcServer {
         codec.disable(SerializationFeature.CLOSE_CLOSEABLE);
         codec.registerModule(new JsonRpcModule(useNamedParameters,
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
-                Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes))
+                Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes)),
+                metrics
         ));
 
         transport.addListener(this::onMessage);
@@ -154,7 +155,7 @@ public class JsonRpcServer {
     }
 
     private Optional<JsonRpcResponse<?>> handleRequest(final JsonRpcRequest request) {
-        final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "process-request")).time();
+        final Timer.Context timer = metrics.timer(name("api", request.getMethod())).time();
         try {
             final RequestMethod method = methods.get(request.getMethod());
             if (method == null) {

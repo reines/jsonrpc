@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.codec;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.Deserializers;
@@ -16,11 +17,14 @@ public class JsonRpcDeserializers extends Deserializers.Base {
 
     private final Function<String, TypeReference<?>> responseTypeMapper;
     private final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper;
+    private final MetricRegistry metrics;
 
     public JsonRpcDeserializers(final Function<String, TypeReference<?>> responseTypeMapper,
-                                final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper) {
+                                final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper,
+                                final MetricRegistry metrics) {
         this.responseTypeMapper = responseTypeMapper;
         this.requestParamTypeMapper = requestParamTypeMapper;
+        this.metrics = metrics;
     }
 
     @Override
@@ -29,11 +33,11 @@ public class JsonRpcDeserializers extends Deserializers.Base {
         final Class<?> rawType = type.getRawClass();
 
         if (JsonRpcRequest.class.isAssignableFrom(rawType)) {
-            return new JsonRpcRequestDeserializer(requestParamTypeMapper);
+            return new JsonRpcRequestDeserializer(requestParamTypeMapper, metrics);
         }
 
         if (JsonRpcResponse.class.isAssignableFrom(rawType)) {
-            return new JsonRpcResponseDeserializer(responseTypeMapper);
+            return new JsonRpcResponseDeserializer(responseTypeMapper, metrics);
         }
 
         if (JsonRpcMessage.class.isAssignableFrom(rawType)) {

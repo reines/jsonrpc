@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WebsocketTransport extends AbstractTransport {
 
@@ -56,11 +57,14 @@ public class WebsocketTransport extends AbstractTransport {
         return new ByteSink() {
             @Override
             public OutputStream openStream() throws IOException {
+                final AtomicBoolean closed = new AtomicBoolean(false);
                 return new ByteArrayOutputStream() {
                     @Override
                     public void close() throws IOException {
-                        socket.fire(new String(toByteArray(), StandardCharsets.UTF_8));
-                        super.close();
+                        if (closed.compareAndSet(false, true)) {
+                            socket.fire(new String(toByteArray(), StandardCharsets.UTF_8));
+                            super.close();
+                        }
                     }
                 };
             }

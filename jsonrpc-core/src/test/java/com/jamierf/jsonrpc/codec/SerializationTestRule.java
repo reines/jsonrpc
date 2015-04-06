@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.codec;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Functions;
@@ -39,7 +40,8 @@ public class SerializationTestRule extends ExternalResource {
         mapper = Jackson.newObjectMapper();
         mapper.registerModule(new JsonRpcModule(useNamedParams,
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
-                Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes))
+                Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes)),
+                new MetricRegistry()
         ));
     }
 

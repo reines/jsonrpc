@@ -26,11 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class SocketTransport extends AbstractTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
-    private static final int MAX_FRAME_SIZE = 1024 * 1024; // 1Mb
 
+    private final int maxFrameSize;
     private final Channel channel;
 
-    public SocketTransport(final HostAndPort address) {
+    public SocketTransport(final HostAndPort address, final int maxFrameSize) {
+        this.maxFrameSize = maxFrameSize;
+
         channel = new Bootstrap()
                 .group(new NioEventLoopGroup())
                 .channel(NioSocketChannel.class)
@@ -40,7 +42,7 @@ public class SocketTransport extends AbstractTransport {
                     @Override
                     protected void initChannel(final SocketChannel channel) {
                         channel.pipeline()
-                                .addLast(new JsonObjectDecoder(MAX_FRAME_SIZE, true)) // Part of Netty 5
+                                .addLast(new JsonObjectDecoder(maxFrameSize, false)) // Part of Netty 5
                                 .addLast(new ChannelInboundHandlerAdapter() {
                                     @Override
                                     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
@@ -77,7 +79,7 @@ public class SocketTransport extends AbstractTransport {
             @Override
             public OutputStream openStream() throws IOException {
                 final AtomicBoolean closed = new AtomicBoolean(false);
-                return new ByteArrayOutputStream(MAX_FRAME_SIZE) {
+                return new ByteArrayOutputStream(maxFrameSize) {
                     @Override
                     public void close() throws IOException {
                         if (closed.compareAndSet(false, true)) {

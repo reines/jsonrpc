@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.codec;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -15,9 +16,11 @@ import com.jamierf.jsonrpc.codec.serializers.ParametersSerializer;
 public class JsonRpcSerializers extends Serializers.Base {
 
     private final boolean useNamedParameters;
+    private final MetricRegistry metrics;
 
-    public JsonRpcSerializers(final boolean useNamedParameters) {
+    public JsonRpcSerializers(final boolean useNamedParameters, final MetricRegistry metrics) {
         this.useNamedParameters = useNamedParameters;
+        this.metrics = metrics;
     }
 
     @Override
@@ -29,11 +32,11 @@ public class JsonRpcSerializers extends Serializers.Base {
         }
 
         if (JsonRpcRequest.class.isAssignableFrom(rawType)) {
-            return new JsonRpcRequestSerializer();
+            return new JsonRpcRequestSerializer(metrics);
         }
 
         if (JsonRpcResponse.class.isAssignableFrom(rawType)) {
-            return new JsonRpcResponseSerializer();
+            return new JsonRpcResponseSerializer(metrics);
         }
 
         return super.findSerializer(config, type, beanDesc);
