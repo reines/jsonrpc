@@ -1,6 +1,5 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.api;
 
-import com.jamierf.jsonrpc.api.ErrorMessage;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 

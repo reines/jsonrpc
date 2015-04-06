@@ -10,12 +10,12 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Date;
 
-import static com.jamierf.jsonrpc.codec.ErrorMessageMatchers.withCode;
-import static com.jamierf.jsonrpc.codec.ErrorMessageMatchers.withMessage;
-import static com.jamierf.jsonrpc.codec.JsonRpcRequestMatchers.forMethod;
-import static com.jamierf.jsonrpc.codec.JsonRpcRequestMatchers.withParams;
-import static com.jamierf.jsonrpc.codec.JsonRpcResponseMatchers.withError;
-import static com.jamierf.jsonrpc.codec.JsonRpcResponseMatchers.withResult;
+import static com.jamierf.jsonrpc.api.ErrorMessageMatchers.withCode;
+import static com.jamierf.jsonrpc.api.ErrorMessageMatchers.withMessage;
+import static com.jamierf.jsonrpc.api.JsonRpcRequestMatchers.forMethod;
+import static com.jamierf.jsonrpc.api.JsonRpcRequestMatchers.withParams;
+import static com.jamierf.jsonrpc.api.JsonRpcResponseMatchers.withError;
+import static com.jamierf.jsonrpc.api.JsonRpcResponseMatchers.withResult;
 import static com.jamierf.jsonrpc.util.Reflections.reference;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsEqual.equalTo;
