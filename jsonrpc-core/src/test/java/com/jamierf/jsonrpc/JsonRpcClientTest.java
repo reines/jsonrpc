@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
-public class JsonRpcServerTest {
+public class JsonRpcClientTest {
 
     public interface Interface {
         String ping();
@@ -28,7 +28,7 @@ public class JsonRpcServerTest {
     }
 
     private ByteArraySink response;
-    private JsonRpcServer server;
+    private JsonRpcClient server;
 
     @Rule
     public BenchmarkRule benchmark = new BenchmarkRule();
@@ -40,7 +40,7 @@ public class JsonRpcServerTest {
         final Transport transport = mock(Transport.class);
         when(transport.getMessageOutput()).thenReturn(response);
 
-        server = JsonRpcServer.builder(transport, new JacksonCodecFactory())
+        server = JsonRpcClient.builder(transport, new JacksonCodecFactory())
                 .executor(MoreExecutors.newDirectExecutorService())
                 .build();
 
@@ -87,10 +87,10 @@ public class JsonRpcServerTest {
     }
 
     private static ByteSource byteResource(final String path) {
-        return Resources.asByteSource(JsonRpcServer.class.getResource(path));
+        return Resources.asByteSource(JsonRpcClient.class.getResource(path));
     }
 
     private static String stringResource(final String resource) throws IOException {
-        return Resources.toString(JsonRpcServer.class.getResource(resource), StandardCharsets.UTF_8);
+        return Resources.toString(JsonRpcClient.class.getResource(resource), StandardCharsets.UTF_8);
     }
 }

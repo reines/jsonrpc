@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class JsonRpcServerBuilder {
+public class JsonRpcClientBuilder {
     private static final int DEFAULT_NUM_THREADS = 10;
     private static final String DEFAULT_METRIC_REGISTRY_NAME = "jsonrpc";
 
@@ -24,33 +24,33 @@ public class JsonRpcServerBuilder {
     private Optional<ExecutorService> executor = Optional.absent();
     private Optional<MetricRegistry> metrics = Optional.absent();
 
-    protected JsonRpcServerBuilder(final Transport transport, final CodecFactory codecFactory) {
+    protected JsonRpcClientBuilder(final Transport transport, final CodecFactory codecFactory) {
         this.transport = checkNotNull(transport);
         this.codecFactory = checkNotNull(codecFactory);
     }
 
-    public JsonRpcServerBuilder useNamedParameters(final boolean useNamedParameters) {
+    public JsonRpcClientBuilder useNamedParameters(final boolean useNamedParameters) {
         this.useNamedParameters = useNamedParameters;
         return this;
     }
 
-    public JsonRpcServerBuilder requestTimeout(final long requestTimeout) {
+    public JsonRpcClientBuilder requestTimeout(final long requestTimeout) {
         this.requestTimeout = requestTimeout;
         return this;
     }
 
-    public JsonRpcServerBuilder executor(final ExecutorService executor) {
+    public JsonRpcClientBuilder executor(final ExecutorService executor) {
         this.executor = Optional.of(executor);
         return this;
     }
 
-    public JsonRpcServerBuilder metrics(final MetricRegistry metrics) {
+    public JsonRpcClientBuilder metrics(final MetricRegistry metrics) {
         this.metrics = Optional.of(metrics);
         return this;
     }
 
-    public JsonRpcServer build() {
-        return new JsonRpcServer(
+    public JsonRpcClient build() {
+        return new JsonRpcClient(
                 transport,
                 useNamedParameters,
                 requestTimeout,

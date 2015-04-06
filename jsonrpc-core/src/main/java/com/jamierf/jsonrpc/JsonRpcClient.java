@@ -34,13 +34,13 @@ import java.util.concurrent.*;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
-public class JsonRpcServer {
+public class JsonRpcClient {
 
     private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcClient.class);
 
-    public static JsonRpcServerBuilder builder(final Transport transport, final CodecFactory codecFactory) {
-        return new JsonRpcServerBuilder(transport, codecFactory);
+    public static JsonRpcClientBuilder builder(final Transport transport, final CodecFactory codecFactory) {
+        return new JsonRpcClientBuilder(transport, codecFactory);
     }
 
     private final Transport transport;
@@ -53,8 +53,8 @@ public class JsonRpcServer {
 
     private final long requestTimeout;
 
-    protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final long requestTimeout,
-                         final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory) {
+    protected JsonRpcClient(final Transport transport, final boolean useNamedParameters, final long requestTimeout,
+                            final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory) {
         this.transport = transport;
         this.metrics = metrics;
         this.requestTimeout = requestTimeout;
@@ -118,7 +118,7 @@ public class JsonRpcServer {
     }
 
     private void send(final Object message) {
-        final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "send-message")).time();
+        final Timer.Context timer = metrics.timer(name(JsonRpcClient.class, "send-message")).time();
         try (final OutputStream out = transport.getMessageOutput().openStream()) {
             codec.writeValue(out, message);
             out.write(DELIMITER);
@@ -131,7 +131,7 @@ public class JsonRpcServer {
 
     @SuppressWarnings("unchecked")
     private <T> void handleResponse(final JsonRpcResponse<T> response) {
-        final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "process-response")).time();
+        final Timer.Context timer = metrics.timer(name(JsonRpcClient.class, "process-response")).time();
         try {
             final PendingResponse<T> pending = (PendingResponse<T>) requests.get(response.getId());
             if (pending == null) {
@@ -181,7 +181,7 @@ public class JsonRpcServer {
     }
 
     private Collection<JsonRpcMessage> readMessage(final ByteSource input) throws IOException {
-        final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "read-message")).time();
+        final Timer.Context timer = metrics.timer(name(JsonRpcClient.class, "read-message")).time();
         try (final InputStream in = input.openStream()) {
             return codec.readValue(in, new TypeReference<Collection<JsonRpcMessage>>() {});
         } finally {
