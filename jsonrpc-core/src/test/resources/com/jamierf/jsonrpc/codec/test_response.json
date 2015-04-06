@@ -2,7 +2,7 @@
   "jsonrpc": "2.0",
   "id": "1",
   "result": {
-    "string": "hello world",
-    "int": 7
+    "stringValue": "hello world",
+    "intValue": 7
   }
 }

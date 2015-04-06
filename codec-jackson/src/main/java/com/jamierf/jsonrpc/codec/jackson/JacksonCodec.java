@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
+import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.TypeReference;
 

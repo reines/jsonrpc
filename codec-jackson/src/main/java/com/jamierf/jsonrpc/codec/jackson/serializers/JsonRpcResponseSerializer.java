@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec.serializers;
+package com.jamierf.jsonrpc.codec.jackson.serializers;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -7,9 +7,9 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.google.common.base.Optional;
 import com.jamierf.jsonrpc.api.ErrorMessage;
+import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Result;
-import com.jamierf.jsonrpc.codec.JsonRpcModule;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ public class JsonRpcResponseSerializer extends JsonSerializer<JsonRpcResponse<?>
         final Timer.Context timer = metrics.timer(name(JsonRpcResponseSerializer.class, "serialize")).time();
         try {
             gen.writeStartObject();
-            gen.writeStringField("jsonrpc", JsonRpcModule.PROTOCOL_VERSION);
+            gen.writeStringField("jsonrpc", JsonRpcMessage.PROTOCOL_VERSION);
 
             if (value.getId() != null) {
                 gen.writeStringField("id", value.getId());

@@ -15,6 +15,7 @@
         <module>codec-jackson</module>
         <module>codec</module>
         <module>transport</module>
+        <module>codec-boon</module>
     </modules>
 
     <properties>

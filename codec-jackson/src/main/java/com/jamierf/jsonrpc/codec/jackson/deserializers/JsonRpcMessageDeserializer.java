@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec.deserializers;
+package com.jamierf.jsonrpc.codec.jackson.deserializers;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -10,7 +10,6 @@ import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.util.Jackson;
-import com.jamierf.jsonrpc.codec.JsonRpcModule;
 
 import java.io.IOException;
 
@@ -24,7 +23,7 @@ public class JsonRpcMessageDeserializer extends JsonDeserializer<JsonRpcMessage>
         final JsonNode node = codec.readTree(jp);
 
         final String protocol = Jackson.getText(node, "jsonrpc");
-        checkArgument(JsonRpcModule.PROTOCOL_VERSION.equals(protocol), "Unsupported protocol: " + protocol);
+        checkArgument(JsonRpcMessage.PROTOCOL_VERSION.equals(protocol), "Unsupported protocol: " + protocol);
 
         // This must be a request
         if (node.has("method")) {

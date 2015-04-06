@@ -1,14 +1,14 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.deser.Deserializers;
 import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.*;
-import com.jamierf.jsonrpc.codec.deserializers.ErrorMessageDeserializer;
-import com.jamierf.jsonrpc.codec.deserializers.JsonRpcMessageDeserializer;
-import com.jamierf.jsonrpc.codec.deserializers.JsonRpcRequestDeserializer;
-import com.jamierf.jsonrpc.codec.deserializers.JsonRpcResponseDeserializer;
+import com.jamierf.jsonrpc.codec.jackson.deserializers.ErrorMessageDeserializer;
+import com.jamierf.jsonrpc.codec.jackson.deserializers.JsonRpcMessageDeserializer;
+import com.jamierf.jsonrpc.codec.jackson.deserializers.JsonRpcRequestDeserializer;
+import com.jamierf.jsonrpc.codec.jackson.deserializers.JsonRpcResponseDeserializer;
 import com.jamierf.jsonrpc.util.TypeReference;
 
 public class JsonRpcDeserializers extends Deserializers.Base {

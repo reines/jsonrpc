@@ -3,7 +3,7 @@ package com.jamierf.jsonrpc;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.jamierf.jsonrpc.codec.JacksonCodecFactory;
+import com.jamierf.jsonrpc.codec.jackson.JacksonCodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
 import org.junit.Before;

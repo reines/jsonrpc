@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.BeanDescription;
@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.ser.Serializers;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Parameters;
-import com.jamierf.jsonrpc.codec.serializers.JsonRpcRequestSerializer;
-import com.jamierf.jsonrpc.codec.serializers.JsonRpcResponseSerializer;
-import com.jamierf.jsonrpc.codec.serializers.ParametersSerializer;
+import com.jamierf.jsonrpc.codec.jackson.serializers.JsonRpcRequestSerializer;
+import com.jamierf.jsonrpc.codec.jackson.serializers.JsonRpcResponseSerializer;
+import com.jamierf.jsonrpc.codec.jackson.serializers.ParametersSerializer;
 
 public class JsonRpcSerializers extends Serializers.Base {
 

@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec.deserializers;
+package com.jamierf.jsonrpc.codec.jackson.deserializers;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;

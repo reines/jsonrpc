@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec.deserializers;
+package com.jamierf.jsonrpc.codec.jackson.deserializers;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;

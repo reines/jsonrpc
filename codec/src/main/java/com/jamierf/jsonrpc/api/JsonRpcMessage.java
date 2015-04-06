@@ -4,6 +4,8 @@ import com.google.common.base.MoreObjects;
 
 public class JsonRpcMessage {
 
+    public static final String PROTOCOL_VERSION = "2.0";
+
     private final String id;
 
     public JsonRpcMessage(final String id) {

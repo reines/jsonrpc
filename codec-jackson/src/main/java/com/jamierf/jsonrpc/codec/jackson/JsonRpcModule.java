@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.Version;
@@ -8,8 +8,6 @@ import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.util.TypeReference;
 
 public class JsonRpcModule extends Module {
-
-    public static final String PROTOCOL_VERSION = "2.0";
 
     private final boolean useNamedParameters;
     private final Function<String, TypeReference<?>> responseTypeMapper;

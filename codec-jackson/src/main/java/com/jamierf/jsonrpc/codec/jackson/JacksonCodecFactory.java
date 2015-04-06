@@ -1,8 +1,10 @@
-package com.jamierf.jsonrpc.codec;
+package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
+import com.jamierf.jsonrpc.codec.Codec;
+import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.util.TypeReference;
 
 public class JacksonCodecFactory implements CodecFactory {

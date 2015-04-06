@@ -1,5 +1,7 @@
 package com.jamierf.jsonrpc.util;
 
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
@@ -42,6 +44,11 @@ public abstract class TypeReference<T> implements Comparable<TypeReference<T>>
          *   on invalid one(s).
          */
         _type = ((ParameterizedType) superClass).getActualTypeArguments()[0];
+    }
+
+    @SuppressWarnings("unchecked")
+    public Class<T> toClass() {
+        return (Class<T>) (_type instanceof Class ? _type : ((ParameterizedTypeImpl) _type).getRawType());
     }
 
     public Type getType() { return _type; }

@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc;
+package com.jamierf.jsonrpc.transport.websocket;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.ByteSink;

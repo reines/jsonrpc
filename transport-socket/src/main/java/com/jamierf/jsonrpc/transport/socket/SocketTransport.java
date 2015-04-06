@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc;
+package com.jamierf.jsonrpc.transport.socket;
 
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;

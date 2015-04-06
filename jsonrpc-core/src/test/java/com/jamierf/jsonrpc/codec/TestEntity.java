@@ -1,28 +1,27 @@
 package com.jamierf.jsonrpc.codec;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 public class TestEntity {
 
-    private final String stringValue;
-    private final int intValue;
+    private String stringValue;
+    private int intValue;
 
-    @JsonCreator
-    public TestEntity(
-            @JsonProperty("string") final String stringValue,
-            @JsonProperty("int") final int intValue) {
+    public TestEntity() {
+        /* for derialization */
+    }
+
+    public TestEntity(final String stringValue, final int intValue) {
         this.stringValue = stringValue;
         this.intValue = intValue;
     }
 
-    public String getString() {
+    public String getStringValue() {
         return stringValue;
     }
 
-    public int getInt() {
+    public int getIntValue() {
         return intValue;
     }
 

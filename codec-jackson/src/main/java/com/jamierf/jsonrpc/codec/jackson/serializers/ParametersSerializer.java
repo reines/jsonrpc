@@ -1,4 +1,4 @@
-package com.jamierf.jsonrpc.codec.serializers;
+package com.jamierf.jsonrpc.codec.jackson.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

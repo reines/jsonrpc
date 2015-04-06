@@ -7,7 +7,7 @@ import com.jamierf.jsonrpc.PendingResponse;
 import com.jamierf.jsonrpc.RequestMethod;
 import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.Parameters;
-import com.jamierf.jsonrpc.util.Reflections;
+import com.jamierf.jsonrpc.codec.jackson.JacksonCodecFactory;
 import com.jamierf.jsonrpc.util.TypeReference;
 import org.junit.rules.ExternalResource;
 
@@ -29,6 +29,10 @@ public class SerializationTestRule extends ExternalResource {
     private Map<String, PendingResponse<?>> requests;
     private Map<String, RequestMethod> methods;
     private Codec mapper;
+
+    public SerializationTestRule(final boolean useNamedParams) {
+        this (useNamedParams, new JacksonCodecFactory());
+    }
 
     public SerializationTestRule(final boolean useNamedParams, final CodecFactory codecFactory) {
         this.useNamedParams = useNamedParams;
@@ -74,7 +78,7 @@ public class SerializationTestRule extends ExternalResource {
 
     public JsonRpcMessage deserialize(final String resource) throws IOException {
         try (final InputStream in = JsonRpcDeserializersTest.class.getResourceAsStream(resource)) {
-            return mapper.readValue(in, Reflections.reference(JsonRpcMessage.class));
+            return mapper.readValue(in, new TypeReference<JsonRpcMessage>() {});
         }
     }
 }
