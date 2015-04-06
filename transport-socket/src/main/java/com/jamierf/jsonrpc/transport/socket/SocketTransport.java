@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.transport.socket;
 
+import com.google.common.base.Optional;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.net.HostAndPort;
@@ -13,9 +14,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,10 +30,14 @@ public class SocketTransport extends AbstractTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
 
+    public static SocketTransportBuilder withAddress(final HostAndPort address) {
+        return new SocketTransportBuilder(address);
+    }
+
     private final int maxFrameSize;
     private final Channel channel;
 
-    public SocketTransport(final HostAndPort address, final int maxFrameSize) {
+    protected SocketTransport(final HostAndPort address, final int maxFrameSize, final Optional<SSLContext> sslContext) {
         this.maxFrameSize = maxFrameSize;
 
         channel = new Bootstrap()
@@ -38,39 +45,47 @@ public class SocketTransport extends AbstractTransport {
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(final SocketChannel channel) {
-                        channel.pipeline()
-                                .addLast(new JsonObjectDecoder(maxFrameSize, false)) // Part of Netty 5
-                                .addLast(new ChannelInboundHandlerAdapter() {
-                                    @Override
-                                    public void channelRead(final ChannelHandlerContext ctx, final Object msg)
-                                            throws IOException {
-                                        final ByteBuf buffer = ((ByteBuf) msg);
-                                        putMessageInput(new ByteSource() {
-                                            @Override
-                                            public InputStream openStream() throws IOException {
-                                                if (LOGGER.isTraceEnabled()) {
-                                                    LOGGER.trace("<- {}", buffer.toString(StandardCharsets.UTF_8));
-                                                }
-                                                return new ByteBufferBackedInputStream(buffer.nioBuffer());
-                                            }
-                                        });
-                                    }
-
-                                    @Override
-                                    public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
-                                            throws Exception {
-                                        LOGGER.warn("Exception from channel: {}", ctx.channel(), cause);
-                                    }
-                                });
-                    }
-                })
+                .handler(createChannelHandler(sslContext))
                 .connect(address.getHostText(), address.getPort())
                 .syncUninterruptibly()
                 .channel();
         LOGGER.info("Connected to: {}", address);
+    }
+
+    protected ChannelHandler createChannelHandler(final Optional<SSLContext> sslContext) {
+        return new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(final SocketChannel channel) {
+                channel.pipeline()
+                        .addLast("decoder", new JsonObjectDecoder(maxFrameSize, false))
+                        .addLast("handler", new ChannelInboundHandlerAdapter() {
+                            @Override
+                            public void channelRead(final ChannelHandlerContext ctx, final Object msg)
+                                    throws IOException {
+                                final ByteBuf buffer = ((ByteBuf) msg);
+                                putMessageInput(new ByteSource() {
+                                    @Override
+                                    public InputStream openStream() throws IOException {
+                                        if (LOGGER.isTraceEnabled()) {
+                                            LOGGER.trace("<- {}", buffer.toString(StandardCharsets.UTF_8));
+                                        }
+                                        return new ByteBufferBackedInputStream(buffer.nioBuffer());
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
+                                    throws Exception {
+                                LOGGER.warn("Exception from channel: {}", ctx.channel(), cause);
+                            }
+                        });
+
+                if (sslContext.isPresent()) {
+                    channel.pipeline().addLast("ssl", new SslHandler(sslContext.get().createSSLEngine()));
+                }
+            }
+        };
     }
 
     @Override

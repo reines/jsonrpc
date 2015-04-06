@@ -5,5 +5,4 @@ and Websocket transport using Atmosphere.
 
 ## TODO
 
-- SSL
 - Compression
