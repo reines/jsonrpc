@@ -3,6 +3,7 @@ package com.jamierf.jsonrpc;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.jamierf.jsonrpc.codec.JacksonCodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
 import org.junit.Before;
@@ -34,7 +35,7 @@ public class JsonRpcServerTest {
         final Transport transport = mock(Transport.class);
         when(transport.getMessageOutput()).thenReturn(response);
 
-        server = JsonRpcServer.withTransport(transport)
+        server = JsonRpcServer.builder(transport, new JacksonCodecFactory())
                 .executor(MoreExecutors.newDirectExecutorService())
                 .build();
 

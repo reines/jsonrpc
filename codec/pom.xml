@@ -9,22 +9,23 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>transport-websocket</artifactId>
-
-    <properties>
-        <atmosphere.version>2.0.0</atmosphere.version>
-    </properties>
+    <artifactId>codec</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.jamierf.jsonrpc</groupId>
-            <artifactId>transport</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.atmosphere</groupId>
-            <artifactId>wasync</artifactId>
-            <version>${atmosphere.version}</version>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${metrics.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
 </project>

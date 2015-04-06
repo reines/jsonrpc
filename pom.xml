@@ -12,11 +12,18 @@
         <module>jsonrpc-core</module>
         <module>transport-socket</module>
         <module>transport-websocket</module>
+        <module>codec-jackson</module>
+        <module>codec</module>
+        <module>transport</module>
     </modules>
 
     <properties>
         <jdk.version>1.8</jdk.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <guava.version>18.0</guava.version>
+        <metrics.version>3.1.0</metrics.version>
+        <slf4j.version>1.7.12</slf4j.version>
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>

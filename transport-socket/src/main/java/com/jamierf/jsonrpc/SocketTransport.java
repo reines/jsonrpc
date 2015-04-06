@@ -1,10 +1,11 @@
 package com.jamierf.jsonrpc;
 
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.net.HostAndPort;
 import com.jamierf.jsonrpc.transport.AbstractTransport;
+import com.jamierf.jsonrpc.util.ByteBufferBackedInputStream;
+import com.jamierf.jsonrpc.util.JsonObjectDecoder;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -12,7 +13,6 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.json.JsonObjectDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

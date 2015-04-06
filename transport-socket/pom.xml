@@ -18,7 +18,7 @@
     <dependencies>
         <dependency>
             <groupId>com.jamierf.jsonrpc</groupId>
-            <artifactId>jsonrpc-core</artifactId>
+            <artifactId>transport</artifactId>
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

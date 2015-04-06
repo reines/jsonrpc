@@ -1,6 +1,5 @@
 package com.jamierf.jsonrpc.codec;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Parameters;
@@ -24,9 +23,9 @@ import static org.junit.Assert.assertThat;
 public class JsonRpcDeserializersTest {
 
     @Rule
-    public SerializationTestRule namedSerialization = new SerializationTestRule(true);
+    public SerializationTestRule namedSerialization = new SerializationTestRule(true, new JacksonCodecFactory());
     @Rule
-    public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
+    public SerializationTestRule positionalSerialization = new SerializationTestRule(false, new JacksonCodecFactory());
 
     @Test
     public void testErrorResponse() throws IOException {
@@ -95,7 +94,7 @@ public class JsonRpcDeserializersTest {
         namedSerialization.deserialize("params_request.json");
     }
 
-    @Test(expected = JsonProcessingException.class)
+    @Test(expected = IOException.class)
     public void testRequestForMethodWithWrongParamTypes() throws IOException {
         namedSerialization.mockMethod("ping", Parameters.of(
                 "name", reference(String.class),

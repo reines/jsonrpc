@@ -1,11 +1,11 @@
 package com.jamierf.jsonrpc;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Result;
+import com.jamierf.jsonrpc.util.TypeReference;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.util.Reflections;
 

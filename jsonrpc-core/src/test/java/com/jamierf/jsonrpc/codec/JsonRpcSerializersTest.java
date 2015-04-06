@@ -18,10 +18,10 @@ public class JsonRpcSerializersTest {
     private static final String MESSAGE_ID = "1";
 
     @Rule
-    public SerializationTestRule namedSerialization = new SerializationTestRule(true);
+    public SerializationTestRule namedSerialization = new SerializationTestRule(true, new JacksonCodecFactory());
 
     @Rule
-    public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
+    public SerializationTestRule positionalSerialization = new SerializationTestRule(false, new JacksonCodecFactory());
 
     @Test
     public void testRequestWithoutParametersSerialized() throws IOException {

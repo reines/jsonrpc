@@ -1,10 +1,10 @@
 package com.jamierf.jsonrpc;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.api.Result;
+import com.jamierf.jsonrpc.util.TypeReference;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

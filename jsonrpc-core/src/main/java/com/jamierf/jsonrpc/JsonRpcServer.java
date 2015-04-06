@@ -2,9 +2,6 @@ package com.jamierf.jsonrpc;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
@@ -17,10 +14,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.api.*;
-import com.jamierf.jsonrpc.codec.JsonRpcModule;
+import com.jamierf.jsonrpc.codec.Codec;
+import com.jamierf.jsonrpc.codec.CodecFactory;
+import com.jamierf.jsonrpc.util.TypeReference;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.transport.Transport;
-import com.jamierf.jsonrpc.util.Jackson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +39,13 @@ public class JsonRpcServer {
     private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
 
-    public static JsonRpcServerBuilder withTransport(final Transport transport) {
-        return new JsonRpcServerBuilder(transport);
+    public static JsonRpcServerBuilder builder(final Transport transport, final CodecFactory codecFactory) {
+        return new JsonRpcServerBuilder(transport, codecFactory);
     }
 
     private final Transport transport;
     private final MetricRegistry metrics;
-    private final ObjectMapper codec;
+    private final Codec codec;
     private final Map<String, PendingResponse<?>> requests;
     private final Map<String, RequestMethod> methods;
     private final ScheduledExecutorService cleaner;
@@ -56,7 +54,7 @@ public class JsonRpcServer {
     private final long requestTimeout;
 
     protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final long requestTimeout,
-                         final ExecutorService executor, final MetricRegistry metrics) {
+                         final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory) {
         this.transport = transport;
         this.metrics = metrics;
         this.requestTimeout = requestTimeout;
@@ -66,13 +64,10 @@ public class JsonRpcServer {
         methods = Maps.newConcurrentMap();
         cleaner = Executors.newSingleThreadScheduledExecutor();
 
-        codec = Jackson.newObjectMapper();
-        codec.disable(SerializationFeature.CLOSE_CLOSEABLE);
-        codec.registerModule(new JsonRpcModule(useNamedParameters,
+        codec = codecFactory.create(useNamedParameters,
                 Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
                 Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes)),
-                metrics
-        ));
+                metrics);
 
         transport.addListener(this::onMessage);
     }
