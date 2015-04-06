@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc.codec;
 
+import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.google.common.io.Resources;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.Parameters;
@@ -22,6 +23,9 @@ public class JsonRpcSerializersTest {
 
     @Rule
     public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
+
+    @Rule
+    public BenchmarkRule benchmark = new BenchmarkRule();
 
     @Test
     public void testRequestWithoutParametersSerialized() throws IOException {

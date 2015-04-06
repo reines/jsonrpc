@@ -1,5 +1,6 @@
 package com.jamierf.jsonrpc;
 
+import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -7,6 +8,7 @@ import com.jamierf.jsonrpc.codec.jackson.JacksonCodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -27,6 +29,9 @@ public class JsonRpcServerTest {
 
     private ByteArraySink response;
     private JsonRpcServer server;
+
+    @Rule
+    public BenchmarkRule benchmark = new BenchmarkRule();
 
     @Before
     public void setUp() throws IOException {
