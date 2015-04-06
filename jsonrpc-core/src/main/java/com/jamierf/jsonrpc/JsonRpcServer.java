@@ -1,7 +1,6 @@
 package com.jamierf.jsonrpc;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.SharedMetricRegistries;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,10 +9,11 @@ import com.google.common.base.Functions;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.reflect.Reflection;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.api.*;
@@ -32,18 +32,18 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
 public class JsonRpcServer {
 
     private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
-    private static final String DEFAULT_METRIC_REGISTRY_NAME = "jsonrpc";
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
+
+    public static JsonRpcServerBuilder withTransport(final Transport transport) {
+        return new JsonRpcServerBuilder(transport);
+    }
 
     private final Transport transport;
     private final MetricRegistry metrics;
@@ -51,20 +51,19 @@ public class JsonRpcServer {
     private final Map<String, PendingResponse<?>> requests;
     private final Map<String, RequestMethod> methods;
     private final ScheduledExecutorService cleaner;
+    private final ExecutorService executor;
 
     private final long requestTimeout;
 
-    public JsonRpcServer(final Transport transport, final boolean useNamedParameters, final long requestTimeout) {
-        this(transport, useNamedParameters, requestTimeout, SharedMetricRegistries.getOrCreate(DEFAULT_METRIC_REGISTRY_NAME));
-    }
-
-    public JsonRpcServer(final Transport transport, final boolean useNamedParameters, final long requestTimeout, final MetricRegistry metrics) {
+    protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final long requestTimeout,
+                         final ExecutorService executor, final MetricRegistry metrics) {
         this.transport = transport;
         this.metrics = metrics;
         this.requestTimeout = requestTimeout;
+        this.executor = executor;
 
-        requests = Maps.newHashMap(); // TODO: expire requests after a reasonable (configurable?) duration
-        methods = Maps.newHashMap();
+        requests = Maps.newConcurrentMap();
+        methods = Maps.newConcurrentMap();
         cleaner = Executors.newSingleThreadScheduledExecutor();
 
         codec = Jackson.newObjectMapper();
@@ -192,18 +191,21 @@ public class JsonRpcServer {
         }
     }
 
-    // TODO: Threading
     protected void onMessage(final ByteSource input) throws IOException {
         final Collection<JsonRpcMessage> messages = readMessage(input);
-        final Collection<JsonRpcMessage> responses = Lists.newLinkedList();
         final boolean batched = messages.size() > 1;
 
-        for (final JsonRpcMessage message : messages) {
-            final Optional<JsonRpcResponse<?>> response = handleMessage(message);
-            if (response.isPresent()) {
-                responses.add(response.get());
-            }
-        }
+        // Submit all messages for handling
+        final Collection<Future<Optional<JsonRpcResponse<?>>>> futures = FluentIterable.from(messages)
+                .transform(m -> executor.submit(() -> handleMessage(m)))
+                .toList();
+
+        // Combine all responses and filter out requests that don't require a response
+        final Collection<JsonRpcResponse<?>> responses = FluentIterable.from(futures)
+                .transform(Futures::getUnchecked)
+                .filter(Optional::isPresent)
+                .transform(Optional::get)
+                .toList();
 
         if (responses.isEmpty()) {
             return;

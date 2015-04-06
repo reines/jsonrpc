@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc;
 
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
 import org.junit.Before;
@@ -9,7 +10,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.nullValue;
@@ -18,8 +18,6 @@ import static org.mockito.Mockito.when;
 import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 public class JsonRpcServerTest {
-
-    private static final long REQUEST_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
     public interface Interface {
         String ping();
@@ -36,7 +34,10 @@ public class JsonRpcServerTest {
         final Transport transport = mock(Transport.class);
         when(transport.getMessageOutput()).thenReturn(response);
 
-        server = new JsonRpcServer(transport, true, REQUEST_TIMEOUT);
+        server = JsonRpcServer.withTransport(transport)
+                .setExecutor(MoreExecutors.newDirectExecutorService())
+                .build();
+
         server.register(new Interface() {
             @Override
             public String ping() {
