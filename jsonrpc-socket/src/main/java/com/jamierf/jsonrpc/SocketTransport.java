@@ -12,6 +12,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.json.JsonObjectDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 public class SocketTransport extends AbstractTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
-    private static final int MAX_FRAME_SIZE = 1024 * 1024 * 1; // 1Mb
+    private static final int MAX_FRAME_SIZE = 1024 * 1024; // 1Mb
 
     private final Channel channel;
 
@@ -38,7 +39,7 @@ public class SocketTransport extends AbstractTransport {
                     @Override
                     protected void initChannel(final SocketChannel channel) {
                         channel.pipeline()
-                                .addLast(new JsonBasedFrameDecoder(MAX_FRAME_SIZE))
+                                .addLast(new JsonObjectDecoder(MAX_FRAME_SIZE, true)) // Part of Netty 5
                                 .addLast(new ChannelInboundHandlerAdapter() {
                                     @Override
                                     public void channelRead(final ChannelHandlerContext ctx, final Object msg)
