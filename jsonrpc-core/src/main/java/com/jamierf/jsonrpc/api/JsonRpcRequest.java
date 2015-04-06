@@ -33,7 +33,7 @@ public class JsonRpcRequest extends JsonRpcMessage {
         return params;
     }
 
-    public <T> JsonRpcResponse<T> response(final T result) {
+    public <T> JsonRpcResponse<T> response(final Result<T> result) {
         return new JsonRpcResponse<>(Optional.of(result), Optional.absent(), getId());
     }
 

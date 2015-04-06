@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.jamierf.jsonrpc.api.ErrorMessage;
-import com.jamierf.jsonrpc.api.JsonRpcRequest;
-import com.jamierf.jsonrpc.api.JsonRpcResponse;
-import com.jamierf.jsonrpc.api.Parameters;
+import com.jamierf.jsonrpc.api.*;
 
 import java.io.IOException;
 
@@ -48,8 +45,8 @@ public class JsonRpcSerializers extends Serializers.Base {
                 gen.writeStringField("id", value.getId());
             }
 
-            final Optional<?> result = value.getResult();
-            final Optional<ErrorMessage> error = value.getError();
+            final Optional<? extends Result<?>> result = value.getResult();
+            final Optional<? extends ErrorMessage> error = value.getError();
             checkArgument(result.isPresent() ^ error.isPresent(), "Only one of result and error may be present");
 
             if (error.isPresent()) {
@@ -57,7 +54,7 @@ public class JsonRpcSerializers extends Serializers.Base {
             }
 
             if (result.isPresent()) {
-                gen.writeObjectField("result", result.get());
+                gen.writeObjectField("result", result.get().get());
             }
 
             gen.writeEndObject();

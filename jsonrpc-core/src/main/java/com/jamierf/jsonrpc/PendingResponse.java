@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.api.Result;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.util.Reflections;
 
@@ -48,8 +49,8 @@ public class PendingResponse<T> {
             final ErrorMessage error = response.getError().get();
             complete(CodedException.fromErrorMessage(error));
         } else if (response.getResult().isPresent()) {
-            final T result = response.getResult().get();
-            future.set(result);
+            final Result<T> result = response.getResult().get();
+            future.set(result.get());
         } else {
             throw new IllegalStateException("Response doesn't include a result or error.");
         }

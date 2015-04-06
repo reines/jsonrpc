@@ -20,7 +20,7 @@ public final class JsonRpcResponseMatchers {
         return new FeatureMatcher<JsonRpcResponse<T>, T>(allOf(notNullValue(), delegate), "result", "result") {
             @Override
             protected T featureValueOf(final JsonRpcResponse<T> actual) {
-                return actual.getResult().orNull();
+                return actual.getResult().transform(Result::get).orNull();
             }
         };
     }

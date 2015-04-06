@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.jamierf.jsonrpc.api.Parameters;
+import com.jamierf.jsonrpc.api.Result;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -27,11 +28,11 @@ public class RequestMethod {
         return parameterTypes;
     }
 
-    public Optional<?> invoke(final Parameters params) {
+    public Optional<Result<?>> invoke(final Parameters params) {
         try {
             final Object result = method.invoke(instance, params.positional());
             if (!isVoid(method.getReturnType())) {
-                return Optional.of(result); // TODO: may return null
+                return Optional.of(new Result<>(result));
             }
 
             return Optional.absent();

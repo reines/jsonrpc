@@ -158,14 +158,15 @@ public class JsonRpcServer {
         try {
             final RequestMethod method = methods.get(request.getMethod());
             if (method == null) {
-                throw new IllegalArgumentException("No such method: " + request.getMethod());
+                return Optional.of(request.error(ErrorMessage.CODE_METHOD_NOT_FOUND,
+                        "No such method: " + request.getMethod()));
             }
 
-            final Optional<?> result = method.invoke(request.getParams());
+            final Optional<Result<?>> result = method.invoke(request.getParams());
             return result.transform(request::response);
         } catch (Exception e) {
             LOGGER.warn("Error handling request " + request.getId(), e);
-            return Optional.of(request.error(100, e.getMessage())); // TODO
+            return Optional.of(request.error(ErrorMessage.CODE_INTERNAL_ERROR, e.getMessage()));
         } finally {
             timer.stop();
         }
@@ -179,7 +180,8 @@ public class JsonRpcServer {
             return handleRequest((JsonRpcRequest) message);
         }
 
-        throw new IllegalArgumentException("Received unknown message type: " + message);
+        return Optional.of(JsonRpcResponse.error(
+                ErrorMessage.CODE_INTERNAL_ERROR, "Unknown message type: " + message));
     }
 
     private Collection<JsonRpcMessage> readMessage(final ByteSource input) throws IOException {

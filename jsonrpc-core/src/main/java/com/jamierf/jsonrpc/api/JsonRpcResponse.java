@@ -5,17 +5,21 @@ import com.google.common.base.Optional;
 
 public class JsonRpcResponse<T> extends JsonRpcMessage {
 
-    private final Optional<T> result;
+    public static JsonRpcResponse<?> error(final int code, final String message) {
+        return new JsonRpcResponse<>(Optional.absent(), Optional.of(new ErrorMessage(code, message)), null);
+    }
+
+    private final Optional<Result<T>> result;
     private final Optional<ErrorMessage> error;
 
-    public JsonRpcResponse(final Optional<T> result, final Optional<ErrorMessage> error, final String id) {
+    public JsonRpcResponse(final Optional<Result<T>> result, final Optional<ErrorMessage> error, final String id) {
         super(id);
 
         this.result = result;
         this.error = error;
     }
 
-    public Optional<T> getResult() {
+    public Optional<Result<T>> getResult() {
         return result;
     }
 

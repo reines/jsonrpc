@@ -153,7 +153,7 @@ public class JsonRpcDeserializers extends Deserializers.Base {
         final TypeReference<?> type = id.isPresent() ? responseTypeMapper.apply(id.get()) : new TypeReference<Object>() {};
 
         return new JsonRpcResponse<>(
-                result.transform(deserialize(codec, type)),
+                result.transform(deserialize(codec, type)).transform(Result::new),
                 error.transform(deserialize(codec, ErrorMessage.class)),
                 id.orNull()
         );
