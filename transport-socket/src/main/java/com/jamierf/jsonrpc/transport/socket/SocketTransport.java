@@ -26,6 +26,8 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class SocketTransport extends AbstractTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
@@ -97,13 +99,13 @@ public class SocketTransport extends AbstractTransport {
                 return new ByteArrayOutputStream(maxFrameSize) {
                     @Override
                     public void close() throws IOException {
-                        if (closed.compareAndSet(false, true)) {
-                            if (LOGGER.isTraceEnabled()) {
-                                LOGGER.trace("-> {}", new String(buf, 0, count, StandardCharsets.UTF_8));
-                            }
-                            channel.writeAndFlush(Unpooled.wrappedBuffer(buf, 0, count));
-                            super.close();
+                        checkState(closed.compareAndSet(false, true), "Stream already closed");
+
+                        if (LOGGER.isTraceEnabled()) {
+                            LOGGER.trace("-> {}", new String(buf, 0, count, StandardCharsets.UTF_8));
                         }
+                        channel.writeAndFlush(Unpooled.wrappedBuffer(buf, 0, count));
+                        super.close();
                     }
                 };
             }

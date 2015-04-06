@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc.codec.jackson;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -31,7 +32,7 @@ public class JacksonCodec implements Codec {
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                 .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS)
-                .disable(SerializationFeature.CLOSE_CLOSEABLE)
+                .disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
                 .registerModule(new JsonRpcModule(useNamedParameters, responseTypeMapper, requestParamTypeMapper, metrics));
     }
 

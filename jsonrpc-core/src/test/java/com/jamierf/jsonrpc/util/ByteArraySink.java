@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class ByteArraySink extends ByteSink {
 
     private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -17,10 +19,9 @@ public class ByteArraySink extends ByteSink {
         return new ByteArrayOutputStream() {
             @Override
             public void close() throws IOException {
-                if (closed.compareAndSet(false, true)) {
-                    writeTo(stream);
-                    super.close();
-                }
+                checkState(closed.compareAndSet(false, true), "Stream already closed");
+                writeTo(stream);
+                super.close();
             }
         };
     }
