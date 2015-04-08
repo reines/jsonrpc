@@ -9,7 +9,7 @@ public class TestEntity {
     private int intValue;
 
     public TestEntity() {
-        /* for derialization */
+        /* for deserialization */
     }
 
     public TestEntity(final String stringValue, final int intValue) {
