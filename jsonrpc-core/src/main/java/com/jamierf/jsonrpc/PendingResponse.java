@@ -5,13 +5,14 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Result;
-import com.jamierf.jsonrpc.util.TypeReference;
 import com.jamierf.jsonrpc.error.CodedException;
-import com.jamierf.jsonrpc.util.Reflections;
+import com.jamierf.jsonrpc.util.TypeReference;
 
 import java.lang.reflect.Type;
 
+import static com.jamierf.jsonrpc.util.Reflections.classOf;
 import static com.jamierf.jsonrpc.util.Reflections.isVoid;
+import static com.jamierf.jsonrpc.util.TypeReference.reference;
 
 public class PendingResponse<T> {
 
@@ -29,7 +30,7 @@ public class PendingResponse<T> {
     }
 
     public boolean expectsResponse() {
-        return !isVoid(Reflections.classOf(type));
+        return !isVoid(classOf(type));
     }
 
     public ListenableFuture<T> getFuture() {
@@ -37,7 +38,7 @@ public class PendingResponse<T> {
     }
 
     public TypeReference<T> getType() {
-        return Reflections.reference(type);
+        return reference(type);
     }
 
     public synchronized void complete(final JsonRpcResponse<T> response) {

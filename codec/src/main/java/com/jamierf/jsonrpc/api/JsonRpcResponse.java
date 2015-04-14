@@ -6,7 +6,7 @@ import com.google.common.base.Optional;
 public class JsonRpcResponse<T> extends JsonRpcMessage {
 
     public static JsonRpcResponse<?> error(final int code, final String message) {
-        return new JsonRpcResponse<>(Optional.absent(), Optional.of(new ErrorMessage(code, message)), null);
+        return new JsonRpcResponse<>(Optional.absent(), Optional.of(new ErrorMessage<>(code, message, Optional.absent())), null);
     }
 
     private final Optional<Result<T>> result;

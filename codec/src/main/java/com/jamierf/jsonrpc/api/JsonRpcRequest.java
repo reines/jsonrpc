@@ -38,7 +38,7 @@ public class JsonRpcRequest extends JsonRpcMessage {
     }
 
     public JsonRpcResponse<?> error(final int code, final String message) {
-        final ErrorMessage errorMessage = new ErrorMessage(code, message);
+        final ErrorMessage errorMessage = new ErrorMessage<>(code, message, Optional.absent());
         return new JsonRpcResponse<>(Optional.absent(), Optional.of(errorMessage), getId());
     }
 

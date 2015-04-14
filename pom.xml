@@ -15,6 +15,7 @@
         <module>transport</module>
         <module>transport-socket</module>
         <module>transport-websocket</module>
+        <module>codec-fastjson</module>
     </modules>
 
     <properties>

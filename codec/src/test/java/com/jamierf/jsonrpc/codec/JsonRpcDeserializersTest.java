@@ -1,6 +1,7 @@
 package com.jamierf.jsonrpc.codec;
 
 import com.carrotsearch.junitbenchmarks.BenchmarkRule;
+import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Parameters;
@@ -16,24 +17,30 @@ import static com.jamierf.jsonrpc.api.JsonRpcRequestMatchers.forMethod;
 import static com.jamierf.jsonrpc.api.JsonRpcRequestMatchers.withParams;
 import static com.jamierf.jsonrpc.api.JsonRpcResponseMatchers.withError;
 import static com.jamierf.jsonrpc.api.JsonRpcResponseMatchers.withResult;
-import static com.jamierf.jsonrpc.util.Reflections.reference;
+import static com.jamierf.jsonrpc.util.TypeReference.reference;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.Assert.assertThat;
 
-public class JsonRpcDeserializersTest {
+public abstract class JsonRpcDeserializersTest {
 
     @Rule
-    public SerializationTestRule namedSerialization = new SerializationTestRule(true);
+    public final SerializationTestRule namedSerialization;
     @Rule
-    public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
+    public final SerializationTestRule positionalSerialization;
+    @Rule
+    public final BenchmarkRule benchmark = new BenchmarkRule();
 
-    @Rule
-    public BenchmarkRule benchmark = new BenchmarkRule();
+    public JsonRpcDeserializersTest(final CodecFactory codecFactory) {
+        this.namedSerialization = new SerializationTestRule(true, codecFactory);
+        this.positionalSerialization = new SerializationTestRule(false, codecFactory);
+    }
 
     @Test
     public void testErrorResponse() throws IOException {
-        namedSerialization.mockPendingResponse("1", String.class);
+        namedSerialization.mockPendingResponse("1", reference(String.class));
 
         final JsonRpcResponse<?> result = (JsonRpcResponse<?>) namedSerialization.deserialize("error_response.json");
 
@@ -46,7 +53,7 @@ public class JsonRpcDeserializersTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testValidResponse() throws IOException {
-        namedSerialization.mockPendingResponse("1", String.class);
+        namedSerialization.mockPendingResponse("1", reference(String.class));
 
         final JsonRpcResponse<String> result = (JsonRpcResponse<String>) namedSerialization.deserialize("string_response.json");
 
@@ -63,7 +70,7 @@ public class JsonRpcDeserializersTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testValidComplexResponse() throws IOException {
-        namedSerialization.mockPendingResponse("1", TestEntity.class);
+        namedSerialization.mockPendingResponse("1", reference(TestEntity.class));
 
         final JsonRpcResponse<TestEntity> result = (JsonRpcResponse<TestEntity>) namedSerialization.deserialize("test_response.json");
 
@@ -93,18 +100,6 @@ public class JsonRpcDeserializersTest {
     public void testRequestForMethodWithNotEnoughParams() throws IOException {
         namedSerialization.mockMethod("ping", Parameters.of(
                 "a", reference(String.class)
-        ));
-
-        namedSerialization.deserialize("params_request.json");
-    }
-
-    @Test(expected = IOException.class)
-    public void testRequestForMethodWithWrongParamTypes() throws IOException {
-        namedSerialization.mockMethod("ping", Parameters.of(
-                "name", reference(String.class),
-                "age", reference(int.class),
-                "dob", reference(Date.class),
-                "test", reference(String.class)
         ));
 
         namedSerialization.deserialize("params_request.json");
@@ -151,6 +146,17 @@ public class JsonRpcDeserializersTest {
                         "dob", new Date(1427900421000L),
                         "test", new TestEntity("hello world", 7)
                 ))
+        ));
+    }
+
+    @Test
+    public void testErrorMessageDeserialized() throws IOException {
+        final ErrorMessage error = namedSerialization.deserialize("error_message.json", reference(ErrorMessage.class));
+
+        assertThat(error, allOf(
+                not(nullValue()),
+                withCode(100),
+                withMessage("test message")
         ));
     }
 }

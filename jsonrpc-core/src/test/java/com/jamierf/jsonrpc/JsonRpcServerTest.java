@@ -60,31 +60,31 @@ public class JsonRpcServerTest {
 
     @Test
     public void testSingleRequestWithNoResponse() throws IOException {
-        server.onMessage(byteResource("codec/single_request_no_response.json"));
+        server.onMessage(byteResource("single_request_no_response.json"));
         assertThat(readResponse(), nullValue());
     }
 
     @Test
     public void testSingleRequestWithResponse() throws IOException {
-        server.onMessage(byteResource("codec/single_request.json"));
-        assertThat(readResponse(), sameJSONAs(stringResource("codec/single_response.json")));
+        server.onMessage(byteResource("single_request.json"));
+        assertThat(readResponse(), sameJSONAs(stringResource("single_response.json")));
     }
 
     @Test
     public void testBatchedRequestWithNoResponse() throws IOException {
-        server.onMessage(byteResource("codec/batched_request_no_response.json"));
+        server.onMessage(byteResource("batched_request_no_response.json"));
         assertThat(readResponse(), nullValue());
     }
 
     @Test
     public void testBatchedRequestWithResponse() throws IOException {
-        server.onMessage(byteResource("codec/batched_request.json"));
-        assertThat(readResponse(), sameJSONAs(stringResource("codec/batched_response.json")));
+        server.onMessage(byteResource("batched_request.json"));
+        assertThat(readResponse(), sameJSONAs(stringResource("batched_response.json")));
     }
 
     @Test
     public void testMessagesAreLineDelimited() throws IOException {
-        server.onMessage(byteResource("codec/batched_request.json"));
+        server.onMessage(byteResource("batched_request.json"));
         assertThat(readResponse(), endsWith(System.lineSeparator()));
     }
 

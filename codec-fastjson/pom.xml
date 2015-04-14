@@ -9,11 +9,7 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>codec-jackson</artifactId>
-
-    <properties>
-        <jackson.version>2.5.2</jackson.version>
-    </properties>
+    <artifactId>codec-fastjson</artifactId>
 
     <dependencies>
         <dependency>
@@ -22,14 +18,9 @@
             <version>0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-afterburner</artifactId>
-            <version>${jackson.version}</version>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.5</version>
         </dependency>
         <dependency>
             <groupId>com.jamierf.jsonrpc</groupId>

@@ -26,6 +26,15 @@ import java.lang.reflect.Type;
  */
 public abstract class TypeReference<T> implements Comparable<TypeReference<T>>
 {
+    public static <T> TypeReference<T> reference(final Type type) {
+        return new TypeReference<T>() {
+            @Override
+            public Type getType() {
+                return type;
+            }
+        };
+    }
+
     protected final Type _type;
 
     protected TypeReference()

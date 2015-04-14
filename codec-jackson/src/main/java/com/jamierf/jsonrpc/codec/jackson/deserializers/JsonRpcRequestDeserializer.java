@@ -60,7 +60,7 @@ public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest>
         }
     }
 
-    private Parameters deserializeParams(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+    private Parameters<String, ?> deserializeParams(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
                                          final ObjectCodec codec) throws IOException {
         if (nodes.isArray()) {
             return deserializePositionalParameters(nodes, types, codec);
@@ -69,7 +69,7 @@ public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest>
         return deserializeNamedParameters(nodes, types, codec);
     }
 
-    private Parameters deserializeNamedParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+    private Parameters<String, ?> deserializeNamedParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
                                                   final ObjectCodec codec) throws IOException {
         final Map<String, Object> decodedParameters = Maps.newHashMap();
 
@@ -97,7 +97,7 @@ public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest>
         return parameters.build();
     }
 
-    private Parameters deserializePositionalParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
+    private Parameters<String, ?> deserializePositionalParameters(final JsonNode nodes, final Parameters<String, TypeReference<?>> types,
                                                        final ObjectCodec codec) throws IOException {
         final Parameters.Builder<String, Object> parameters = Parameters.builder();
 
@@ -108,7 +108,6 @@ public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest>
 
             final String name = entry.getKey();
             final JsonParser jp = codec.treeAsTokens(nodeIterator.next());
-
             final TypeReference<?> type = entry.getValue();
 
             parameters.add(name, codec.readValue(jp, reference(type)));

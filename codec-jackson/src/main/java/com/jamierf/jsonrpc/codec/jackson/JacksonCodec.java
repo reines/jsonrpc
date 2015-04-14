@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
@@ -27,7 +26,6 @@ public class JacksonCodec implements Codec {
                         final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper,
                         final MetricRegistry metrics) {
         codec = new ObjectMapper()
-                .registerModule(new GuavaModule())
                 .registerModule(new AfterburnerModule())
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)

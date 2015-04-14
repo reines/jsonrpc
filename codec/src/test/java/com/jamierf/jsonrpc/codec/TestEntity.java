@@ -21,8 +21,16 @@ public class TestEntity {
         return stringValue;
     }
 
+    public void setStringValue(String stringValue) {
+        this.stringValue = stringValue;
+    }
+
     public int getIntValue() {
         return intValue;
+    }
+
+    public void setIntValue(int intValue) {
+        this.intValue = intValue;
     }
 
     @Override

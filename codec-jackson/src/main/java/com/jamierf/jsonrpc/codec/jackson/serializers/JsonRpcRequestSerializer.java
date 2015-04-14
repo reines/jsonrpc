@@ -14,9 +14,11 @@ import static com.codahale.metrics.MetricRegistry.name;
 
 public class JsonRpcRequestSerializer extends JsonSerializer<JsonRpcRequest> {
 
+    private final boolean useNamedParameters;
     private final MetricRegistry metrics;
 
-    public JsonRpcRequestSerializer(final MetricRegistry metrics) {
+    public JsonRpcRequestSerializer(final boolean useNamedParameters, final MetricRegistry metrics) {
+        this.useNamedParameters = useNamedParameters;
         this.metrics = metrics;
     }
 
@@ -34,7 +36,7 @@ public class JsonRpcRequestSerializer extends JsonSerializer<JsonRpcRequest> {
             gen.writeStringField("method", value.getMethod());
 
             if (!value.getParams().isEmpty()) {
-                gen.writeObjectField("params", value.getParams());
+                gen.writeObjectField("params", useNamedParameters ? value.getParams().named() : value.getParams().positional());
             }
 
             gen.writeEndObject();

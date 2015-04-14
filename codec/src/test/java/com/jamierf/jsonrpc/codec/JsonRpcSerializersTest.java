@@ -14,18 +14,21 @@ import java.util.Date;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
-public class JsonRpcSerializersTest {
+public abstract class JsonRpcSerializersTest {
 
     private static final String MESSAGE_ID = "1";
 
     @Rule
-    public SerializationTestRule namedSerialization = new SerializationTestRule(true);
-
+    public final SerializationTestRule namedSerialization;
     @Rule
-    public SerializationTestRule positionalSerialization = new SerializationTestRule(false);
-
+    public final SerializationTestRule positionalSerialization;
     @Rule
-    public BenchmarkRule benchmark = new BenchmarkRule();
+    public final BenchmarkRule benchmark = new BenchmarkRule();
+
+    public JsonRpcSerializersTest(final CodecFactory codecFactory) {
+        this.namedSerialization = new SerializationTestRule(true, codecFactory);
+        this.positionalSerialization = new SerializationTestRule(false, codecFactory);
+    }
 
     @Test
     public void testRequestWithoutParametersSerialized() throws IOException {
