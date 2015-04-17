@@ -33,8 +33,7 @@
         </dependency>
         <dependency>
             <groupId>com.jamierf.jsonrpc</groupId>
-            <artifactId>codec</artifactId>
-            <type>test-jar</type>
+            <artifactId>testsupport</artifactId>
             <version>0.1-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>

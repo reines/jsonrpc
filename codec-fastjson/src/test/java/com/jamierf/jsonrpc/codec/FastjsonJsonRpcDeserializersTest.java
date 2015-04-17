@@ -1,6 +1,6 @@
-package com.jamierf.jsonrpc.codec.fastjson;
+package com.jamierf.jsonrpc.codec;
 
-import com.jamierf.jsonrpc.codec.JsonRpcDeserializersTest;
+import com.jamierf.jsonrpc.codec.fastjson.FastjsonCodecFactory;
 
 public class FastjsonJsonRpcDeserializersTest extends JsonRpcDeserializersTest {
     public FastjsonJsonRpcDeserializersTest() {

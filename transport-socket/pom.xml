@@ -26,5 +26,11 @@
             <artifactId>netty-all</artifactId>
             <version>${netty.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.jamierf.jsonrpc</groupId>
+            <artifactId>testsupport</artifactId>
+            <version>0.1-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

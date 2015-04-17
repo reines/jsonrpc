@@ -4,7 +4,7 @@ import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.jamierf.jsonrpc.codec.jackson.JacksonCodecFactory;
+import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
 import org.junit.Before;
@@ -21,18 +21,24 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
-public class JsonRpcServerTest {
+public abstract class JsonRpcServerTest {
 
     public interface Interface {
         String ping();
         void testNoResponse();
     }
 
+    @Rule
+    public final BenchmarkRule benchmark = new BenchmarkRule();
+
+    private final CodecFactory codecFactory;
+
     private ByteArraySink response;
     private JsonRpcServer server;
 
-    @Rule
-    public BenchmarkRule benchmark = new BenchmarkRule();
+    public JsonRpcServerTest(final CodecFactory codecFactory) {
+        this.codecFactory = codecFactory;
+    }
 
     @Before
     public void setUp() throws IOException {
@@ -41,7 +47,7 @@ public class JsonRpcServerTest {
         final Transport transport = mock(Transport.class);
         when(transport.getMessageOutput()).thenReturn(response);
 
-        server = JsonRpcServer.builder(transport, new JacksonCodecFactory())
+        server = JsonRpcServer.builder(transport, codecFactory)
                 .executor(MoreExecutors.newDirectExecutorService())
                 .build();
 

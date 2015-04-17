@@ -1,6 +1,6 @@
-package com.jamierf.jsonrpc.codec.jackson;
+package com.jamierf.jsonrpc.codec;
 
-import com.jamierf.jsonrpc.codec.JsonRpcDeserializersTest;
+import com.jamierf.jsonrpc.codec.jackson.JacksonCodecFactory;
 
 public class JacksonJsonRpcDeserializersTest extends JsonRpcDeserializersTest {
     public JacksonJsonRpcDeserializersTest() {
