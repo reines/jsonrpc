@@ -1,6 +1,8 @@
 package com.jamierf.jsonrpc.codec.fastjson;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.parser.DefaultJSONParser;
+import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.JSONSerializer;
 import com.alibaba.fastjson.serializer.SerializeConfig;
@@ -21,6 +23,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class FastjsonCodec implements Codec {
+
+    private static final int PARSER_FEATURES = JSON.DEFAULT_PARSER_FEATURE
+            | Feature.SupportSingleValueAsArray.getMask();
 
     private final ParserConfig parserConfig;
     private final SerializeConfig serializerConfig;
@@ -50,7 +55,7 @@ public class FastjsonCodec implements Codec {
     @Override
     public <T> T readValue(final InputStream in, final TypeReference<T> type) throws IOException {
         final String json = CharStreams.toString(new InputStreamReader(in, StandardCharsets.UTF_8));
-        final DefaultJSONParser parser = new DefaultJSONParser(json, parserConfig);
+        final DefaultJSONParser parser = new DefaultJSONParser(json, parserConfig, PARSER_FEATURES);
         return parser.parseObject(type.getType());
     }
 }

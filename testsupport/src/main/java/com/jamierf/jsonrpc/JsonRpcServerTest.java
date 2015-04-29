@@ -85,7 +85,7 @@ public abstract class JsonRpcServerTest {
     @Test
     public void testBatchedRequestWithResponse() throws IOException {
         server.onMessage(byteResource("batched_request.json"));
-        assertThat(readResponse(), sameJSONAs(stringResource("batched_response.json")));
+        assertThat(readResponse(), sameJSONAs(stringResource("batched_response.json")).allowingAnyArrayOrdering());
     }
 
     @Test
