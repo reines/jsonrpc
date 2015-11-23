@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +23,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.Futures;
@@ -32,6 +34,7 @@ import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Result;
 import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.codec.CodecFactory;
+import com.jamierf.jsonrpc.filter.RequestHandler;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.TypeReference;
 
@@ -47,10 +50,11 @@ public class JsonRpcServer {
     protected final Map<String, RequestMethod> methods;
     protected final ExecutorService executor;
     protected final Supplier<Map<String, ?>> metadata;
+    protected final List<RequestHandler> requestHandlerChain;
 
     protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final ExecutorService executor,
                             final MetricRegistry metrics, final CodecFactory codecFactory,
-                            final Supplier<Map<String, ?>> metadata) {
+                            final Supplier<Map<String, ?>> metadata, final List<RequestHandler> requestHandlerChain) {
         this.transport = transport;
         this.metrics = metrics;
         this.executor = executor;
@@ -65,6 +69,9 @@ public class JsonRpcServer {
                 metrics);
 
         transport.addListener(this::onMessage);
+
+        this.requestHandlerChain = Lists.newLinkedList(requestHandlerChain);
+        this.requestHandlerChain.add(RequestMethod::invoke);
     }
 
     public <T> void register(final T instance, final Class<T> type) {
@@ -73,7 +80,7 @@ public class JsonRpcServer {
 
     public <T> void register(final String namespace, final T instance, final Class<T> type) {
         for (final Method method : type.getMethods()) {
-            methods.put(zipNamespace(namespace, method.getName()), new RequestMethod(method, instance));
+            methods.put(zipNamespace(namespace, method.getName()), new RequestMethod(namespace, method, instance));
         }
     }
 
@@ -99,7 +106,14 @@ public class JsonRpcServer {
             }
 
             RequestContext.putAll(request.getMetadata());
-            final Optional<Result<?>> result = method.invoke(request.getParams());
+
+            // Return the response from the first handler in the chain that handles it
+            final Optional<Result<?>> result = requestHandlerChain.stream()
+                .map(h -> h.handle(method, request.getParams()))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+
             RequestContext.clear();
 
             return result.map(r -> request.response(r, metadata.get()));

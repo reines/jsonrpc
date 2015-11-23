@@ -5,6 +5,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -26,6 +27,7 @@ import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.error.CodedException;
+import com.jamierf.jsonrpc.filter.RequestHandler;
 import com.jamierf.jsonrpc.transport.Transport;
 
 public class JsonRpcClient extends JsonRpcServer {
@@ -36,8 +38,8 @@ public class JsonRpcClient extends JsonRpcServer {
 
     protected JsonRpcClient(final Transport transport, final boolean useNamedParameters, final Duration requestTimeout,
                             final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory,
-                            final Supplier<Map<String, ?>> metadata) {
-        super (transport, useNamedParameters, executor, metrics, codecFactory, metadata);
+                            final Supplier<Map<String, ?>> metadata, final List<RequestHandler> requestHandlerChain) {
+        super (transport, useNamedParameters, executor, metrics, codecFactory, metadata, requestHandlerChain);
 
         this.requestTimeout = requestTimeout;
         this.metrics = metrics;

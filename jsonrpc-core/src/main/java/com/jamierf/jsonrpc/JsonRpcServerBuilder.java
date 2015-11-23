@@ -3,6 +3,7 @@ package com.jamierf.jsonrpc;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -11,7 +12,9 @@ import java.util.function.Supplier;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.SharedMetricRegistries;
+import com.google.common.collect.Lists;
 import com.jamierf.jsonrpc.codec.CodecFactory;
+import com.jamierf.jsonrpc.filter.RequestHandler;
 import com.jamierf.jsonrpc.transport.Transport;
 
 public class JsonRpcServerBuilder {
@@ -20,6 +23,7 @@ public class JsonRpcServerBuilder {
 
     private final Transport transport;
     private final CodecFactory codecFactory;
+    private final List<RequestHandler> requestHandlerChain;
 
     private boolean useNamedParameters = true;
     private Optional<ExecutorService> executor = Optional.empty();
@@ -29,6 +33,7 @@ public class JsonRpcServerBuilder {
     protected JsonRpcServerBuilder(final Transport transport, final CodecFactory codecFactory) {
         this.transport = checkNotNull(transport);
         this.codecFactory = checkNotNull(codecFactory);
+        requestHandlerChain = Lists.newLinkedList();
     }
 
     public JsonRpcServerBuilder useNamedParameters(final boolean useNamedParameters) {
@@ -51,6 +56,11 @@ public class JsonRpcServerBuilder {
         return this;
     }
 
+    public JsonRpcServerBuilder filter(final RequestHandler requestHandler) {
+        requestHandlerChain.add(requestHandler);
+        return this;
+    }
+
     public JsonRpcServer build() {
         return new JsonRpcServer(
                 transport,
@@ -58,7 +68,8 @@ public class JsonRpcServerBuilder {
                 executor.orElseGet(() -> Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)),
                 metrics.orElseGet(() -> SharedMetricRegistries.getOrCreate(DEFAULT_METRIC_REGISTRY_NAME)),
                 codecFactory,
-                metadata
+                metadata,
+                requestHandlerChain
         );
     }
 }
