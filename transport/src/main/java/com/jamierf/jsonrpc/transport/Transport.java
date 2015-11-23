@@ -13,4 +13,5 @@ public interface Transport {
     void addListener(final MessageListener listener);
 
     ByteSink getMessageOutput() throws IOException;
+    void close();
 }

@@ -70,4 +70,9 @@ public class WebsocketTransport extends AbstractTransport {
             }
         };
     }
+
+    @Override
+    public void close() {
+        socket.close();
+    }
 }

@@ -1,5 +1,16 @@
 package com.jamierf.jsonrpc.codec.jackson.deserializers;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.jamierf.jsonrpc.util.Jackson.reference;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonParser;
@@ -7,22 +18,11 @@ import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import com.jamierf.jsonrpc.api.JsonRpcRequest;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.TypeReference;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.jamierf.jsonrpc.util.Jackson.reference;
 
 public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest> {
 
@@ -43,17 +43,19 @@ public class JsonRpcRequestDeserializer extends JsonDeserializer<JsonRpcRequest>
             final JsonNode node = codec.readTree(jp);
 
             // Extract the ID then figure out the parameter types based on the known method parameters
-            final Optional<String> method = Optional.fromNullable(Jackson.getText(node, "method"));
+            final Optional<String> method = Optional.ofNullable(Jackson.getText(node, "method"));
             checkArgument(method.isPresent(), "Invalid request without method");
             final Parameters<String, TypeReference<?>> types = requestParamTypeMapper.apply(method.get());
+            checkArgument(types != null, "Unrecognised requests, unknown method");
 
-            final Optional<String> id = Optional.fromNullable(Jackson.getText(node, "id"));
-            final Optional<JsonNode> params = Optional.fromNullable(Jackson.get(node, "params"));
+            final Optional<String> id = Optional.ofNullable(Jackson.getText(node, "id"));
+            final Optional<JsonNode> params = Optional.ofNullable(Jackson.get(node, "params"));
 
             return new JsonRpcRequest(
                     method.get(),
                     params.isPresent() ? deserializeParams(params.get(), types, codec) : Parameters.none(),
-                    id.orNull()
+                    id.orElse(null),
+                    Jackson.getMap(node, "meta")
             );
         } finally {
             timer.stop();

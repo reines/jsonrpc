@@ -1,9 +1,10 @@
 package com.jamierf.jsonrpc.codec.jackson;
 
+import java.util.function.Function;
+
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
-import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.util.TypeReference;
 

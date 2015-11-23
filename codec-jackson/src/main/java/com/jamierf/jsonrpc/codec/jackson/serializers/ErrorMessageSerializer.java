@@ -3,10 +3,10 @@ package com.jamierf.jsonrpc.codec.jackson.serializers;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.google.common.base.Optional;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public class ErrorMessageSerializer extends JsonSerializer<ErrorMessage> {
     @Override

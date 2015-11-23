@@ -1,13 +1,6 @@
 package com.jamierf.jsonrpc.codec;
 
-import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Functions;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
-import com.jamierf.jsonrpc.api.JsonRpcMessage;
-import com.jamierf.jsonrpc.api.Parameters;
-import com.jamierf.jsonrpc.util.TypeReference;
-import org.junit.rules.ExternalResource;
+import static com.jamierf.jsonrpc.util.TypeReference.reference;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,7 +8,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static com.jamierf.jsonrpc.util.TypeReference.reference;
+import org.junit.rules.ExternalResource;
+
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
+import com.jamierf.jsonrpc.api.JsonRpcMessage;
+import com.jamierf.jsonrpc.api.Parameters;
+import com.jamierf.jsonrpc.util.TypeReference;
 
 public class SerializationTestRule extends ExternalResource {
 
@@ -37,8 +37,8 @@ public class SerializationTestRule extends ExternalResource {
         methods = Maps.newHashMap();
 
         mapper = codecFactory.create(useNamedParams,
-                Functions.forMap(requests),
-                Functions.forMap(methods),
+                requests::get,
+                methods::get,
                 new MetricRegistry()
         );
     }
@@ -51,7 +51,7 @@ public class SerializationTestRule extends ExternalResource {
         methods.put(name, types);
     }
 
-    public <T> void mockPendingResponse(final String id, final TypeReference<?> type) {
+    public void mockPendingResponse(final String id, final TypeReference<?> type) {
         requests.put(id, type);
     }
 

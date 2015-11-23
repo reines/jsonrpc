@@ -1,20 +1,20 @@
 package com.jamierf.jsonrpc.codec.jackson.serializers;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.io.IOException;
+import java.util.Optional;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.google.common.base.Optional;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcMessage;
 import com.jamierf.jsonrpc.api.JsonRpcResponse;
 import com.jamierf.jsonrpc.api.Result;
-
-import java.io.IOException;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static com.google.common.base.Preconditions.checkArgument;
 
 public class JsonRpcResponseSerializer extends JsonSerializer<JsonRpcResponse<?>> {
 
@@ -45,6 +45,10 @@ public class JsonRpcResponseSerializer extends JsonSerializer<JsonRpcResponse<?>
 
             if (result.isPresent()) {
                 gen.writeObjectField("result", result.get().get());
+            }
+
+            if (!value.getMetadata().isEmpty()) {
+                gen.writeObjectField( "meta", value.getMetadata() );
             }
 
             gen.writeEndObject();

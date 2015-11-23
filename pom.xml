@@ -47,7 +47,6 @@
         <module>transport</module>
         <module>transport-socket</module>
         <module>transport-websocket</module>
-        <module>codec-fastjson</module>
         <module>testsupport</module>
     </modules>
 

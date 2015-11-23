@@ -1,45 +1,78 @@
 package com.jamierf.jsonrpc.transport.socket;
 
-import com.google.common.base.Optional;
+import static com.google.common.base.Preconditions.checkState;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLContext;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.ssl.SslHandler;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.net.HostAndPort;
 import com.jamierf.jsonrpc.transport.AbstractTransport;
 import com.jamierf.jsonrpc.util.ByteBufferBackedInputStream;
 import com.jamierf.jsonrpc.util.JsonObjectDecoder;
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.ssl.SslHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLContext;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.google.common.base.Preconditions.checkState;
 
 public class SocketTransport extends AbstractTransport {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SocketTransport.class);
 
-    public static SocketTransportBuilder withAddress(final HostAndPort address) {
-        return new SocketTransportBuilder(address);
+    public static ClientSocketTransportBuilder forClient(final String host, final int port) {
+        return forClient(HostAndPort.fromParts(host, port));
+    }
+
+    public static ClientSocketTransportBuilder forClient(final HostAndPort address) {
+        return new ClientSocketTransportBuilder(address);
+    }
+
+    public static ServerSocketTransportBuilder forServer(final int port) {
+        return new ServerSocketTransportBuilder(port);
     }
 
     private final int maxFrameSize;
     private final Channel channel;
 
-    protected SocketTransport(final HostAndPort address, final int maxFrameSize, final Optional<SSLContext> sslContext) {
+    protected SocketTransport(final int port, final int maxFrameSize, final Optional<SSLContext> sslContext) {
+        this.maxFrameSize = maxFrameSize;
+
+        channel = new ServerBootstrap()
+            .group(new NioEventLoopGroup())
+            .channel(NioServerSocketChannel.class)
+            .option(ChannelOption.SO_KEEPALIVE, true)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .childHandler(createChannelHandler(sslContext))
+            .bind(port)
+            .syncUninterruptibly()
+            .channel();
+        LOGGER.info("Bound to: {}", port);
+    }
+
+    protected SocketTransport(final HostAndPort address, final int maxFrameSize) {
         this.maxFrameSize = maxFrameSize;
 
         channel = new Bootstrap()
@@ -47,7 +80,7 @@ public class SocketTransport extends AbstractTransport {
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.SO_KEEPALIVE, true)
                 .option(ChannelOption.TCP_NODELAY, true)
-                .handler(createChannelHandler(sslContext))
+                .handler(createChannelHandler(Optional.empty()))
                 .connect(address.getHostText(), address.getPort())
                 .syncUninterruptibly()
                 .channel();
@@ -110,5 +143,10 @@ public class SocketTransport extends AbstractTransport {
                 };
             }
         };
+    }
+
+    @Override
+    public void close() {
+        channel.close().syncUninterruptibly();
     }
 }

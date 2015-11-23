@@ -1,5 +1,10 @@
 package com.jamierf.jsonrpc.codec.jackson;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.function.Function;
+
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -7,15 +12,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.util.Jackson;
 import com.jamierf.jsonrpc.util.TypeReference;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 public class JacksonCodec implements Codec {
 

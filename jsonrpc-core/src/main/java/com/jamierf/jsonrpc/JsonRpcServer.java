@@ -1,22 +1,6 @@
 package com.jamierf.jsonrpc;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.base.Functions;
-import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Maps;
-import com.google.common.io.ByteSource;
-import com.google.common.util.concurrent.Futures;
-import com.jamierf.jsonrpc.api.*;
-import com.jamierf.jsonrpc.codec.Codec;
-import com.jamierf.jsonrpc.codec.CodecFactory;
-import com.jamierf.jsonrpc.transport.Transport;
-import com.jamierf.jsonrpc.util.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.codahale.metrics.MetricRegistry.name;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,19 +9,36 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Supplier;
 
-import static com.codahale.metrics.MetricRegistry.name;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Maps;
+import com.google.common.io.ByteSource;
+import com.google.common.util.concurrent.Futures;
+import com.jamierf.jsonrpc.api.ErrorMessage;
+import com.jamierf.jsonrpc.api.JsonRpcMessage;
+import com.jamierf.jsonrpc.api.JsonRpcRequest;
+import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.api.Result;
+import com.jamierf.jsonrpc.codec.Codec;
+import com.jamierf.jsonrpc.codec.CodecFactory;
+import com.jamierf.jsonrpc.transport.Transport;
+import com.jamierf.jsonrpc.util.TypeReference;
 
 public class JsonRpcServer {
 
     private static final byte[] DELIMITER = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonRpcServer.class);
-
-    public static JsonRpcClientBuilder builder(final Transport transport, final CodecFactory codecFactory) {
-        return new JsonRpcClientBuilder(transport, codecFactory);
-    }
 
     protected final Transport transport;
     protected final MetricRegistry metrics;
@@ -45,19 +46,22 @@ public class JsonRpcServer {
     protected final Map<String, PendingResponse<?>> requests;
     protected final Map<String, RequestMethod> methods;
     protected final ExecutorService executor;
+    protected final Supplier<Map<String, ?>> metadata;
 
     protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final ExecutorService executor,
-                            final MetricRegistry metrics, final CodecFactory codecFactory) {
+                            final MetricRegistry metrics, final CodecFactory codecFactory,
+                            final Supplier<Map<String, ?>> metadata) {
         this.transport = transport;
         this.metrics = metrics;
         this.executor = executor;
+        this.metadata = metadata;
 
         requests = Maps.newConcurrentMap();
         methods = Maps.newConcurrentMap();
 
         codec = codecFactory.create(useNamedParameters,
-                Functions.forMap(Maps.transformValues(requests, PendingResponse::getType)),
-                Functions.forMap(Maps.transformValues(methods, RequestMethod::getParameterTypes)),
+                Maps.transformValues(requests, PendingResponse::getType)::get,
+                Maps.transformValues(methods, RequestMethod::getParameterTypes)::get,
                 metrics);
 
         transport.addListener(this::onMessage);
@@ -91,14 +95,17 @@ public class JsonRpcServer {
             final RequestMethod method = methods.get(request.getMethod());
             if (method == null) {
                 return Optional.of(request.error(ErrorMessage.CODE_METHOD_NOT_FOUND,
-                        "No such method: " + request.getMethod()));
+                        "No such method: " + request.getMethod(), metadata.get()));
             }
 
+            RequestContext.putAll(request.getMetadata());
             final Optional<Result<?>> result = method.invoke(request.getParams());
-            return result.transform(request::response);
+            RequestContext.clear();
+
+            return result.map(r -> request.response(r, metadata.get()));
         } catch (Exception e) {
             LOGGER.warn("Error handling request " + request.getId(), e);
-            return Optional.of(request.error(ErrorMessage.CODE_INTERNAL_ERROR, e.getMessage()));
+            return Optional.of(request.error(ErrorMessage.CODE_INTERNAL_ERROR, e.getMessage(), metadata.get()));
         } finally {
             timer.stop();
         }
@@ -110,7 +117,7 @@ public class JsonRpcServer {
         }
 
         return Optional.of(JsonRpcResponse.error(
-                ErrorMessage.CODE_INTERNAL_ERROR, "Unknown message type: " + message));
+                ErrorMessage.CODE_INTERNAL_ERROR, "Unknown message type: " + message, metadata.get()));
     }
 
     protected Collection<JsonRpcMessage> readMessage(final ByteSource input) throws IOException {
@@ -149,6 +156,10 @@ public class JsonRpcServer {
             // Not a batch, so send each response individually
             responses.forEach(this::send);
         }
+    }
+
+    public void close() {
+        transport.close();
     }
 
     protected static String zipNamespace(final String... parts) {

@@ -1,17 +1,21 @@
 package com.jamierf.jsonrpc.api;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
-import com.jamierf.jsonrpc.util.TypeReference;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
+import com.jamierf.jsonrpc.util.TypeReference;
 
 public class Parameters<K, V> {
 
@@ -78,7 +82,7 @@ public class Parameters<K, V> {
         }
 
         public Builder<K, V> add(final K name, final V value) {
-            params.put(name, Optional.fromNullable(value));
+            params.put(name, Optional.ofNullable(value));
             return this;
         }
 
@@ -98,8 +102,8 @@ public class Parameters<K, V> {
     }
 
     public Optional<V> get(final K key) {
-        return Optional.fromNullable(params.get(key))
-                .transform(Optional::orNull);
+        return Optional.ofNullable(params.get(key))
+                .map(p -> p.orElse(null));
     }
 
     public Iterator<Map.Entry<K, V>> iterator() {
@@ -107,7 +111,7 @@ public class Parameters<K, V> {
     }
 
     public Map<K, V> named() {
-        return Maps.transformValues(params, Optional::orNull);
+        return Maps.transformValues(params, p -> p.orElse(null));
     }
 
     public Set<K> keys() {

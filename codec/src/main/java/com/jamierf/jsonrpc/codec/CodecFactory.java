@@ -1,12 +1,12 @@
 package com.jamierf.jsonrpc.codec;
 
+import java.util.ServiceLoader;
+import java.util.function.Function;
+
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.util.TypeReference;
-
-import java.util.ServiceLoader;
 
 public interface CodecFactory {
 

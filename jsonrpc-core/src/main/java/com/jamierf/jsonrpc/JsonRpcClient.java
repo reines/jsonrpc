@@ -1,31 +1,43 @@
 package com.jamierf.jsonrpc;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Optional;
 import com.google.common.reflect.Reflection;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.jamierf.jsonrpc.api.*;
+import com.jamierf.jsonrpc.api.ErrorMessage;
+import com.jamierf.jsonrpc.api.JsonRpcMessage;
+import com.jamierf.jsonrpc.api.JsonRpcRequest;
+import com.jamierf.jsonrpc.api.JsonRpcResponse;
+import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.error.CodedException;
 import com.jamierf.jsonrpc.transport.Transport;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.util.concurrent.*;
-
-import static com.codahale.metrics.MetricRegistry.name;
-
 public class JsonRpcClient extends JsonRpcServer {
 
-    private final long requestTimeout;
+    private final Duration requestTimeout;
     private final MetricRegistry metrics;
     private final ScheduledExecutorService cleaner;
 
-    protected JsonRpcClient(final Transport transport, final boolean useNamedParameters, final long requestTimeout,
-                            final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory) {
-        super (transport, useNamedParameters, executor, metrics, codecFactory);
+    protected JsonRpcClient(final Transport transport, final boolean useNamedParameters, final Duration requestTimeout,
+                            final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory,
+                            final Supplier<Map<String, ?>> metadata) {
+        super (transport, useNamedParameters, executor, metrics, codecFactory, metadata);
 
         this.requestTimeout = requestTimeout;
         this.metrics = metrics;
@@ -45,7 +57,7 @@ public class JsonRpcClient extends JsonRpcServer {
     }
 
     protected <T> ListenableFuture<T> call(final String method, final Parameters<String, ?> params, final Type returnType) {
-        final JsonRpcRequest request = JsonRpcRequest.method(method, params);
+        final JsonRpcRequest request = JsonRpcRequest.method(method, params, metadata.get());
 
         final PendingResponse<T> pending = new PendingResponse<>(returnType);
         if (pending.expectsResponse()) {
@@ -60,9 +72,9 @@ public class JsonRpcClient extends JsonRpcServer {
             // Add a scheduled task to timeout this request if we haven't received a response
             cleaner.schedule(() -> {
                 if (!pending.isComplete()) {
-                    pending.complete(new TimeoutException(String.format("Request timed out after %d ms", requestTimeout)));
+                    pending.complete(new TimeoutException(String.format("Request timed out after %s", requestTimeout)));
                 }
-            }, requestTimeout, TimeUnit.MILLISECONDS);
+            }, requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
         }
 
         return pending.getFuture();
@@ -92,9 +104,15 @@ public class JsonRpcClient extends JsonRpcServer {
     protected Optional<JsonRpcResponse<?>> handleMessage(JsonRpcMessage message) {
         if (message instanceof JsonRpcResponse<?>) {
             handleResponse((JsonRpcResponse<?>) message);
-            return Optional.absent();
+            return Optional.empty();
         }
 
         return super.handleMessage(message);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        cleaner.shutdown();
     }
 }

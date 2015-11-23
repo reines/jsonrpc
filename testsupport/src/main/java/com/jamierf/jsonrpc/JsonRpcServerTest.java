@@ -1,5 +1,20 @@
 package com.jamierf.jsonrpc;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringEndsWith.endsWith;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+
 import com.carrotsearch.junitbenchmarks.BenchmarkRule;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Resources;
@@ -7,19 +22,6 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringEndsWith.endsWith;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 public abstract class JsonRpcServerTest {
 
@@ -47,7 +49,7 @@ public abstract class JsonRpcServerTest {
         final Transport transport = mock(Transport.class);
         when(transport.getMessageOutput()).thenReturn(response);
 
-        server = JsonRpcServer.builder(transport, codecFactory)
+        server = JsonRpc.server(transport, codecFactory)
                 .executor(MoreExecutors.newDirectExecutorService())
                 .build();
 

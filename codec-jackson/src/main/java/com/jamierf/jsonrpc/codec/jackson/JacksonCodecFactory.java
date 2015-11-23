@@ -1,7 +1,8 @@
 package com.jamierf.jsonrpc.codec.jackson;
 
+import java.util.function.Function;
+
 import com.codahale.metrics.MetricRegistry;
-import com.google.common.base.Function;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.codec.CodecFactory;

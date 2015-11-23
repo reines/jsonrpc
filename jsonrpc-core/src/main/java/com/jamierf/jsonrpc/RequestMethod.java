@@ -1,6 +1,5 @@
 package com.jamierf.jsonrpc;
 
-import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.api.Result;
@@ -8,6 +7,7 @@ import com.jamierf.jsonrpc.util.TypeReference;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import static com.jamierf.jsonrpc.util.Reflections.isVoid;
 
@@ -35,7 +35,7 @@ public class RequestMethod {
                 return Optional.of(new Result<>(result));
             }
 
-            return Optional.absent();
+            return Optional.empty();
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw Throwables.propagate(e);
         }

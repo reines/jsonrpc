@@ -35,6 +35,10 @@ public abstract class TypeReference<T> implements Comparable<TypeReference<T>>
         };
     }
 
+    public static TypeReference<?> untyped() {
+        return reference(Object.class);
+    }
+
     protected final Type _type;
 
     protected TypeReference()
