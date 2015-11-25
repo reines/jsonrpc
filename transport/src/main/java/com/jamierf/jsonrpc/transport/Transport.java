@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public interface Transport {
     interface MessageListener {
-        void onMessageInput(final ByteSource source) throws IOException;
+        void onMessageInput(final ByteSource source, final ByteSink target) throws IOException;
     }
 
     void addListener(final MessageListener listener);

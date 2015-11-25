@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc.transport;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 
 import java.io.IOException;
@@ -11,11 +12,11 @@ public abstract class AbstractTransport implements Transport {
 
     private final Collection<MessageListener> listeners = Lists.newCopyOnWriteArrayList();
 
-    protected void putMessageInput(final ByteSource source) throws IOException {
+    protected void putMessageInput(final ByteSource source, final ByteSink target) throws IOException {
         try {
             listeners.forEach(l -> {
                 try {
-                    l.onMessageInput(source);
+                    l.onMessageInput(source, target);
                 } catch (IOException e) {
                     throw Throwables.propagate(e);
                 }

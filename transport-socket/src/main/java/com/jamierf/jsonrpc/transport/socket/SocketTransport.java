@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,8 +23,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.ssl.SslHandler;
@@ -54,6 +56,15 @@ public class SocketTransport extends AbstractTransport {
         return new ServerSocketTransportBuilder(port);
     }
 
+    private static ByteSource asSource( final ByteBuf buffer ) {
+        return new ByteSource() {
+            @Override
+            public InputStream openStream() throws IOException {
+                return new ByteBufferBackedInputStream( buffer.nioBuffer() );
+            }
+        };
+    }
+
     private final int maxFrameSize;
     private final Channel channel;
 
@@ -69,7 +80,7 @@ public class SocketTransport extends AbstractTransport {
             .bind(port)
             .syncUninterruptibly()
             .channel();
-        LOGGER.info("Bound to: {}", port);
+        LOGGER.info("Bound to: {}", getLocalAddress());
     }
 
     protected SocketTransport(final HostAndPort address, final int maxFrameSize) {
@@ -84,35 +95,49 @@ public class SocketTransport extends AbstractTransport {
                 .connect(address.getHostText(), address.getPort())
                 .syncUninterruptibly()
                 .channel();
-        LOGGER.info("Connected to: {}", address);
+        LOGGER.info("Connected to: {}", getRemoteAddress());
+    }
+
+    public InetSocketAddress getLocalAddress() {
+        return (InetSocketAddress) channel.localAddress();
+    }
+
+    public InetSocketAddress getRemoteAddress() {
+        return (InetSocketAddress) channel.remoteAddress();
     }
 
     protected ChannelHandler createChannelHandler(final Optional<SSLContext> sslContext) {
-        return new ChannelInitializer<SocketChannel>() {
+        return new ChannelInitializer<Channel>() {
             @Override
-            protected void initChannel(final SocketChannel channel) {
+            protected void initChannel(final Channel channel) {
                 channel.pipeline()
                         .addLast("decoder", new JsonObjectDecoder(maxFrameSize, false))
-                        .addLast("handler", new ChannelInboundHandlerAdapter() {
+                        .addLast("inHandler", new ChannelInboundHandlerAdapter() {
                             @Override
                             public void channelRead(final ChannelHandlerContext ctx, final Object msg)
                                     throws IOException {
                                 final ByteBuf buffer = ((ByteBuf) msg);
-                                putMessageInput(new ByteSource() {
-                                    @Override
-                                    public InputStream openStream() throws IOException {
-                                        if (LOGGER.isTraceEnabled()) {
-                                            LOGGER.trace("<- {}", buffer.toString(StandardCharsets.UTF_8));
-                                        }
-                                        return new ByteBufferBackedInputStream(buffer.nioBuffer());
-                                    }
-                                });
+                                if (LOGGER.isTraceEnabled()) {
+                                    LOGGER.trace("<- {}", buffer.toString(StandardCharsets.UTF_8));
+                                }
+
+                                putMessageInput( asSource( buffer ), asSink( ctx.channel() ) );
                             }
 
                             @Override
-                            public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause)
-                                    throws Exception {
+                            public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) {
                                 LOGGER.warn("Exception from channel: {}", ctx.channel(), cause);
+                            }
+                        })
+                        .addLast("outHandler", new ChannelOutboundHandlerAdapter() {
+                            @Override
+                            public void write( final ChannelHandlerContext ctx, final Object msg,
+                                final ChannelPromise promise ) throws Exception {
+                                final ByteBuf buffer = ((ByteBuf) msg);
+                                if (LOGGER.isTraceEnabled()) {
+                                    LOGGER.trace("-> {}", buffer.toString(StandardCharsets.UTF_8));
+                                }
+                                super.write( ctx, msg, promise );
                             }
                         });
 
@@ -123,8 +148,7 @@ public class SocketTransport extends AbstractTransport {
         };
     }
 
-    @Override
-    public ByteSink getMessageOutput() {
+    private ByteSink asSink( final Channel channel) {
         return new ByteSink() {
             @Override
             public OutputStream openStream() throws IOException {
@@ -133,16 +157,17 @@ public class SocketTransport extends AbstractTransport {
                     @Override
                     public void close() throws IOException {
                         checkState(closed.compareAndSet(false, true), "Stream already closed");
-
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("-> {}", new String(buf, 0, count, StandardCharsets.UTF_8));
-                        }
-                        channel.writeAndFlush(Unpooled.wrappedBuffer(buf, 0, count));
+                        channel.writeAndFlush( Unpooled.wrappedBuffer( buf, 0, count ) ).awaitUninterruptibly();
                         super.close();
                     }
                 };
             }
         };
+    }
+
+    @Override
+    public ByteSink getMessageOutput() {
+        return asSink( channel );
     }
 
     @Override

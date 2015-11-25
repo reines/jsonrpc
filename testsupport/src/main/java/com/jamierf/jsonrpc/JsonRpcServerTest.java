@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -22,8 +23,12 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.codec.CodecFactory;
 import com.jamierf.jsonrpc.transport.Transport;
 import com.jamierf.jsonrpc.util.ByteArraySink;
+import com.jamierf.jsonrpc.util.SimpleLoggingRule;
 
 public abstract class JsonRpcServerTest {
+
+    @ClassRule
+    public static SimpleLoggingRule logging = new SimpleLoggingRule().trace( "com.jamierf" );
 
     public interface Interface {
         String ping();
@@ -68,31 +73,31 @@ public abstract class JsonRpcServerTest {
 
     @Test
     public void testSingleRequestWithNoResponse() throws IOException {
-        server.onMessage(byteResource("single_request_no_response.json"));
+        server.onMessage(byteResource("single_request_no_response.json"), response);
         assertThat(readResponse(), nullValue());
     }
 
     @Test
     public void testSingleRequestWithResponse() throws IOException {
-        server.onMessage(byteResource("single_request.json"));
+        server.onMessage(byteResource("single_request.json"), response);
         assertThat(readResponse(), sameJSONAs(stringResource("single_response.json")));
     }
 
     @Test
     public void testBatchedRequestWithNoResponse() throws IOException {
-        server.onMessage(byteResource("batched_request_no_response.json"));
+        server.onMessage(byteResource("batched_request_no_response.json"), response);
         assertThat(readResponse(), nullValue());
     }
 
     @Test
     public void testBatchedRequestWithResponse() throws IOException {
-        server.onMessage(byteResource("batched_request.json"));
+        server.onMessage(byteResource("batched_request.json"), response);
         assertThat(readResponse(), sameJSONAs(stringResource("batched_response.json")).allowingAnyArrayOrdering());
     }
 
     @Test
     public void testMessagesAreLineDelimited() throws IOException {
-        server.onMessage(byteResource("batched_request.json"));
+        server.onMessage(byteResource("batched_request.json"), response);
         assertThat(readResponse(), endsWith(System.lineSeparator()));
     }
 

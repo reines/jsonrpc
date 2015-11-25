@@ -25,6 +25,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.Futures;
 import com.jamierf.jsonrpc.api.ErrorMessage;
@@ -84,9 +85,9 @@ public class JsonRpcServer {
         }
     }
 
-    protected void send(final Object message) {
+    protected void send(final Object message, final ByteSink target) {
         final Timer.Context timer = metrics.timer(name(JsonRpcServer.class, "send-message")).time();
-        try (final OutputStream out = transport.getMessageOutput().openStream()) {
+        try (final OutputStream out = target.openStream()) {
             codec.writeValue(out, message);
             out.write(DELIMITER);
         } catch (IOException e) {
@@ -143,7 +144,7 @@ public class JsonRpcServer {
         }
     }
 
-    protected void onMessage(final ByteSource input) throws IOException {
+    protected void onMessage(final ByteSource input, final ByteSink output) throws IOException {
         final Collection<JsonRpcMessage> messages = readMessage(input);
         final boolean batched = messages.size() > 1;
 
@@ -165,10 +166,12 @@ public class JsonRpcServer {
 
         if (batched) {
            // There were more than 1 incoming, so it was a batch
-            send(responses);
+            send(responses, output);
         } else {
             // Not a batch, so send each response individually
-            responses.forEach(this::send);
+            for ( final JsonRpcResponse<?> response : responses ) {
+                send(response, output);
+            }
         }
     }
 

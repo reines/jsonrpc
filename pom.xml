@@ -44,10 +44,9 @@
         <module>codec</module>
         <module>codec-jackson</module>
         <module>jsonrpc-core</module>
+        <module>testsupport</module>
         <module>transport</module>
         <module>transport-socket</module>
-        <module>transport-websocket</module>
-        <module>testsupport</module>
     </modules>
 
     <properties>

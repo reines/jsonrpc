@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc;
 
 import static com.codahale.metrics.MetricRegistry.name;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.time.Duration;
@@ -17,6 +18,7 @@ import java.util.function.Supplier;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Throwables;
 import com.google.common.reflect.Reflection;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -47,6 +49,10 @@ public class JsonRpcClient extends JsonRpcServer {
         cleaner = Executors.newSingleThreadScheduledExecutor();
     }
 
+    public <T> T proxy(final Class<T> remoteInterface) {
+        return proxy(null, remoteInterface);
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T proxy(final String namespace, final Class<T> remoteInterface) {
         return Reflection.newProxy(remoteInterface, (proxy, method, args) -> call(namespace, method, args).get());
@@ -68,7 +74,11 @@ public class JsonRpcClient extends JsonRpcServer {
             pending.getFuture().addListener(() -> requests.remove(request.getId()), MoreExecutors.directExecutor());
         }
 
-        send(request);
+        try {
+            send(request, transport.getMessageOutput());
+        } catch ( IOException e ) {
+            throw Throwables.propagate(e);
+        }
 
         if (pending.expectsResponse()) {
             // Add a scheduled task to timeout this request if we haven't received a response
