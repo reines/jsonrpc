@@ -2,6 +2,7 @@ package com.jamierf.jsonrpc;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class JsonRpcServerBuilder {
     private final List<RequestHandler> requestHandlerChain;
 
     private boolean useNamedParameters = true;
+    private Duration requestTimeout = Duration.ofSeconds(1);
     private Optional<ExecutorService> executor = Optional.empty();
     private Optional<MetricRegistry> metrics = Optional.empty();
     private Supplier<Map<String, ?>> metadata = Collections::emptyMap;
@@ -38,6 +40,11 @@ public class JsonRpcServerBuilder {
 
     public JsonRpcServerBuilder useNamedParameters(final boolean useNamedParameters) {
         this.useNamedParameters = useNamedParameters;
+        return this;
+    }
+
+    public JsonRpcServerBuilder requestTimeout(final Duration requestTimeout) {
+        this.requestTimeout = requestTimeout;
         return this;
     }
 
@@ -65,6 +72,7 @@ public class JsonRpcServerBuilder {
         return new JsonRpcServer(
                 transport,
                 useNamedParameters,
+                requestTimeout,
                 executor.orElseGet(() -> Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)),
                 metrics.orElseGet(() -> SharedMetricRegistries.getOrCreate(DEFAULT_METRIC_REGISTRY_NAME)),
                 codecFactory,
