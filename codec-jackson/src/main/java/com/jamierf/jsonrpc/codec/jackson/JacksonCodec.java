@@ -11,7 +11,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.util.Jackson;
@@ -25,8 +24,7 @@ public class JacksonCodec implements Codec {
                         final Function<String, TypeReference<?>> responseTypeMapper,
                         final Function<String, Parameters<String, TypeReference<?>>> requestParamTypeMapper,
                         final MetricRegistry metrics) {
-        codec = new ObjectMapper()
-                .registerModule(new AfterburnerModule())
+        codec = Jackson.newObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
                 .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS)

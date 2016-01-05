@@ -4,13 +4,22 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 public final class Jackson {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    public static ObjectMapper newObjectMapper() {
+        return new ObjectMapper( new JsonFactory() )
+            .registerModule( new GuavaModule() )
+            .registerModule(new AfterburnerModule());
+    }
+
+    private static final ObjectMapper mapper = newObjectMapper();
 
     public static int getInt(final JsonNode node, final String key) {
         final JsonNode value = get(node, key);

@@ -13,9 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,6 +33,7 @@ import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.jamierf.jsonrpc.api.ErrorMessage;
 import com.jamierf.jsonrpc.api.JsonRpcMessage;
@@ -60,13 +59,13 @@ public class JsonRpcServer {
     protected final Codec codec;
     protected final Map<String, PendingResponse<?>> requests;
     protected final Map<String, RequestMethod> methods;
-    protected final ExecutorService executor;
+    protected final ListeningExecutorService executor;
     protected final Supplier<Map<String, ?>> metadata;
     protected final List<RequestHandler> requestHandlerChain;
     protected final ScheduledExecutorService cleaner;
 
     protected JsonRpcServer(final Transport transport, final boolean useNamedParameters, final Duration requestTimeout,
-                            final ExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory,
+                            final ListeningExecutorService executor, final MetricRegistry metrics, final CodecFactory codecFactory,
                             final Supplier<Map<String, ?>> metadata, final List<RequestHandler> requestHandlerChain) {
         this.transport = transport;
         this.requestTimeout = requestTimeout;
@@ -132,11 +131,9 @@ public class JsonRpcServer {
 
         if (pending.expectsResponse()) {
             // Add a scheduled task to timeout this request if we haven't received a response
-            cleaner.schedule(() -> {
-                if (!pending.isComplete()) {
-                    pending.complete(new TimeoutException(String.format("Request timed out after %s", requestTimeout)));
-                }
-            }, requestTimeout.toMillis(), TimeUnit.MILLISECONDS);
+			cleaner.schedule(() -> pending.complete(new TimeoutException(String.format(
+					"Request timed out after %s", requestTimeout))), requestTimeout.toMillis(),
+					TimeUnit.MILLISECONDS);
         }
 
         return pending.getFuture();
@@ -219,30 +216,34 @@ public class JsonRpcServer {
         final boolean batched = messages.size() > 1;
 
         // Submit all messages for handling
-        final Collection<Future<Optional<JsonRpcResponse<?>>>> futures = FluentIterable.from(messages)
+        final ListenableFuture<List<Optional<JsonRpcResponse<?>>>> future = Futures.allAsList(
+            FluentIterable.from(messages)
                 .transform(m -> executor.submit(() -> handleMessage(m, output)))
-                .toList();
+                .toList()
+        );
 
-        // Combine all responses and filter out requests that don't require a response
-        final Collection<JsonRpcResponse<?>> responses = FluentIterable.from(futures)
-                .transform(Futures::getUnchecked)
+        // Add a a listener to respond once the messages are handled
+        future.addListener( () -> {
+            // Combine all responses and filter out requests that don't require a response
+            final Collection<JsonRpcResponse<?>> responses = FluentIterable.from(Futures.getUnchecked(future))
                 .filter(Optional::isPresent)
                 .transform(Optional::get)
                 .toList();
 
-        if (responses.isEmpty()) {
-            return;
-        }
-
-        if (batched) {
-           // There were more than 1 incoming, so it was a batch
-            send(responses, output);
-        } else {
-            // Not a batch, so send each response individually
-            for ( final JsonRpcResponse<?> response : responses ) {
-                send(response, output);
+            if (responses.isEmpty()) {
+                return;
             }
-        }
+
+            if (batched) {
+                // There were more than 1 incoming, so it was a batch
+                send(responses, output);
+            } else {
+                // Not a batch, so send each response individually
+                for ( final JsonRpcResponse<?> response : responses ) {
+                    send(response, output);
+                }
+            }
+        }, MoreExecutors.directExecutor() );
     }
 
     public void close() {

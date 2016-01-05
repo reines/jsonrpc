@@ -1,6 +1,7 @@
 package com.jamierf.jsonrpc;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -73,7 +74,7 @@ public class JsonRpcClientBuilder {
                 transport,
                 useNamedParameters,
                 requestTimeout,
-                executor.orElseGet(() -> Executors.newFixedThreadPool(DEFAULT_NUM_THREADS)),
+                listeningDecorator(executor.orElseGet(() -> Executors.newFixedThreadPool(DEFAULT_NUM_THREADS))),
                 metrics.orElseGet(() -> SharedMetricRegistries.getOrCreate(DEFAULT_METRIC_REGISTRY_NAME)),
                 codecFactory,
                 metadata,

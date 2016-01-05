@@ -32,6 +32,11 @@
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-guava</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.jamierf.jsonrpc</groupId>
             <artifactId>testsupport</artifactId>
             <version>0.1-SNAPSHOT</version>

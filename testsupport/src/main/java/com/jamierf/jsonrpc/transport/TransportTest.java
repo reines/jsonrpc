@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
@@ -93,6 +94,18 @@ public abstract class TransportTest<T extends Transport> {
 
 		sinkCaptor.getValue().write( generateJsonMessage().getBytes() );
 		verify( clientListener, withTimeout() ).onMessageInput( any( ByteSource.class ), any( ByteSink.class ) );
+	}
+
+	@Test
+	public void testMultipleClients() throws IOException {
+		final int numClients = 10;
+
+		for ( int i = 0; i < numClients; i++ ) {
+			final T client = createClient( server );
+			client.getMessageOutput().write( generateJsonMessage().getBytes() );
+		}
+
+		verify( serverListener, times( numClients ) ).onMessageInput( any( ByteSource.class ), any( ByteSink.class ) );
 	}
 
 	@After
