@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk7.Jdk7Module;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.jamierf.jsonrpc.api.Parameters;
 import com.jamierf.jsonrpc.codec.Codec;
 import com.jamierf.jsonrpc.util.Jackson;
@@ -31,6 +33,8 @@ public class JacksonCodec implements Codec {
                 .disable(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS)
                 .disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET)
                 .registerModule(new GuavaModule())
+                .registerModule(new Jdk7Module())
+                .registerModule(new Jdk8Module())
                 .registerModule(new JsonRpcModule(useNamedParameters, responseTypeMapper, requestParamTypeMapper, metrics));
     }
 
